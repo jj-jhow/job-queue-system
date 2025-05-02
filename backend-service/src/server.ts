@@ -38,27 +38,24 @@ queueEvents.on('error', (err) => {
 });
 
 // --- Middleware ---
-// **Enable CORS for all origins for HTTP requests**
-// This should come *before* your routes
 app.use(cors({
-    origin: '*', // Allow all origins (adjust for production)
-    methods: ['GET', 'POST', 'OPTIONS'], // Allow common methods including OPTIONS for preflight
-    allowedHeaders: ['Content-Type', 'Authorization'], // Allow necessary headers
+    origin: '*',
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-
-app.use(express.json()); // To parse JSON request bodies
+app.use(express.json());
 
 
 // --- Data Structures ---
 interface JobStatus {
     id: string;
     name: string;
-    status: 'waiting' | 'active' | 'completed' | 'failed' | 'delayed' | 'paused' | 'unknown'; // Added unknown
+    status: 'waiting' | 'active' | 'completed' | 'failed' | 'delayed' | 'paused' | 'unknown';
     progress: number | object;
     logs: string[];
     result?: any;
     error?: string;
-    timestamp: number;
+    timestamp: number; // Job creation timestamp from BullMQ job
 }
 const jobStore: Map<string, JobStatus> = new Map();
 
@@ -95,8 +92,8 @@ app.post('/jobs', async (req: Request, res: Response) => {
             name: name,
             status: 'waiting',
             progress: 0,
-            logs: [`[${new Date().toISOString()}] Job ${jobId} queued.`],
-            timestamp: job.timestamp,
+            logs: [`[${new Date().toISOString()}] Job ${jobId} queued.`], // Use current time for queue log
+            timestamp: job.timestamp, // Store BullMQ's creation timestamp
         };
         jobStore.set(jobId, initialStatus);
 
@@ -122,15 +119,13 @@ app.get('/jobs/:jobId', async (req: Request, res: Response) => {
         const cachedStatus = jobStore.get(jobId);
 
         if (!job && !cachedStatus) {
-             // Check if it recently completed/failed and was removed from queue but maybe still in cache
             if (cachedStatus) {
-                 res.status(200).json(cachedStatus); // Return cached status if found
+                 res.status(200).json(cachedStatus);
                  return;
             }
             return res.status(404).json({ message: 'Job not found' });
         }
 
-        // Determine state, prioritize BullMQ state if available
         let currentState: JobStatus['status'] = 'unknown';
         if (job) {
              currentState = await job.getState();
@@ -147,7 +142,7 @@ app.get('/jobs/:jobId', async (req: Request, res: Response) => {
             logs: cachedStatus?.logs ?? [],
             result: job?.returnvalue ?? cachedStatus?.result,
             error: job?.failedReason ?? cachedStatus?.error,
-            timestamp: job?.timestamp ?? cachedStatus?.timestamp ?? Date.now(), // Fallback timestamp
+            timestamp: job?.timestamp ?? cachedStatus?.timestamp ?? Date.now(),
         };
 
         res.status(200).json(combinedStatus);
@@ -176,7 +171,6 @@ io.on('connection', (socket) => {
                  socket.emit('jobStatusUpdate', { id: jobId, status: 'not_found' });
                  return;
              }
-             // Reuse logic from GET /jobs/:jobId to combine status
              let currentState: JobStatus['status'] = 'unknown';
              if (job) { currentState = await job.getState(); }
              else if (cachedStatus) { currentState = cachedStatus.status; }
@@ -204,24 +198,27 @@ io.on('connection', (socket) => {
 function updateAndBroadcast(jobId: string, updates: Partial<JobStatus>) {
      const currentStatus = jobStore.get(jobId) || {
          id: jobId,
-         name: 'unknown', // Will be updated if job data available
+         name: 'unknown',
          status: 'active',
          progress: 0,
          logs: [],
-         timestamp: Date.now()
+         timestamp: Date.now() // Use current time if creating new cache entry
      };
 
-    // Merge updates, ensuring logs are appended
     const newStatus = {
         ...currentStatus,
         ...updates,
         logs: updates.logs ? [...currentStatus.logs, ...updates.logs] : currentStatus.logs
     };
 
-    // Update name if it was unknown and is now provided
     if (currentStatus.name === 'unknown' && updates.name) {
         newStatus.name = updates.name;
     }
+    // Ensure timestamp isn't overwritten by updates unless explicitly provided
+    if (!updates.timestamp) {
+        newStatus.timestamp = currentStatus.timestamp;
+    }
+
 
     jobStore.set(jobId, newStatus);
     io.emit('jobStatusUpdate', newStatus);
@@ -230,47 +227,60 @@ function updateAndBroadcast(jobId: string, updates: Partial<JobStatus>) {
 
 queueEvents.on('progress', ({ jobId, data }, timestamp) => {
     console.log(`Job ${jobId} progress:`, data);
-    const currentStatus = jobStore.get(jobId); // Get current status to avoid resetting progress if data is just a log
+    const currentStatus = jobStore.get(jobId);
     const progress = typeof data === 'number' ? data : (data as any)?.percentage ?? currentStatus?.progress ?? 0;
+    // Use timestamp from event if valid, otherwise current time
+    const eventTime = (timestamp && !isNaN(Number(timestamp))) ? new Date(Number(timestamp)) : new Date();
     const logMessage = (typeof data === 'object' && (data as any)?.log) ? (data as any).log : `Progress: ${progress}%`;
 
     updateAndBroadcast(jobId, {
-        status: 'active', // Ensure status reflects activity
+        status: 'active',
         progress: progress,
-        logs: [`[${new Date(timestamp).toISOString()}] ${logMessage}`] // Use event timestamp
+        logs: [`[${eventTime.toISOString()}] ${logMessage}`]
     });
 });
 
 queueEvents.on('completed', ({ jobId, returnvalue }, timestamp) => {
     console.log(`Job ${jobId} completed successfully. Result:`, returnvalue);
+    // Use timestamp from event if valid, otherwise current time
+    const eventTime = (timestamp && !isNaN(Number(timestamp))) ? new Date(timestamp) : new Date();
     updateAndBroadcast(jobId, {
         status: 'completed',
         progress: 100,
         result: returnvalue,
-        logs: [`[${new Date(timestamp).toISOString()}] Job completed successfully.`]
+        logs: [`[${eventTime.toISOString()}] Job completed successfully.`]
     });
-    // Optional: Clean up from jobStore after a delay
-    // setTimeout(() => jobStore.delete(jobId), 60000);
 });
 
 queueEvents.on('failed', ({ jobId, failedReason }, timestamp) => {
     console.log(`Job ${jobId} failed:`, failedReason);
+     // Use timestamp from event if valid, otherwise current time
+    const eventTime = (timestamp && !isNaN(Number(timestamp))) ? new Date(timestamp) : new Date();
     updateAndBroadcast(jobId, {
         status: 'failed',
         error: failedReason,
-        logs: [`[${new Date(timestamp).toISOString()}] Job failed: ${failedReason}`]
+        logs: [`[${eventTime.toISOString()}] Job failed: ${failedReason}`]
     });
 });
 
-queueEvents.on('active', ({ jobId, prev }, timestamp) => {
+// *** FIX: Use current time for 'active' event log ***
+queueEvents.on('active', ({ jobId, prev }) => { // Removed timestamp parameter from handler signature
      console.log(`Job ${jobId} is now active (previous state: ${prev})`);
-     // Fetch job name if not already known
+     const eventTime = new Date(); // Get current time when event is handled
      myQueue.getJob(jobId).then(job => {
          updateAndBroadcast(jobId, {
              status: 'active',
              name: job?.name, // Update name if available
-             logs: [`[${new Date(timestamp).toISOString()}] Job started processing.`]
+             timestamp: job?.timestamp, // Ensure we store the original creation timestamp
+             logs: [`[${eventTime.toISOString()}] Job started processing.`] // Use current time for log
          });
+     }).catch(err => {
+          console.error(`[${jobId}] Error fetching job details during 'active' event:`, err);
+          // Still update status even if fetching details fails
+          updateAndBroadcast(jobId, {
+              status: 'active',
+              logs: [`[${eventTime.toISOString()}] Job started processing (details fetch failed).`]
+          });
      });
 });
 
@@ -307,3 +317,4 @@ async function gracefulShutdown() {
 
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
+

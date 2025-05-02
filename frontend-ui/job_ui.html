@@ -32,9 +32,14 @@
         .job-status-card h3 { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; word-break: break-all; }
         .job-status-badge { display: inline-block; padding: 0.25em 0.6em; font-size: 75%; font-weight: 700; line-height: 1; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: 0.25rem; margin-left: 0.5rem; }
         .status-queued { background-color: #6c757d; color: white; }
-        .status-processing { background-color: #0d6efd; color: white; }
+        .status-waiting { background-color: #6c757d; color: white; } /* Added for BullMQ state */
+        .status-active { background-color: #0d6efd; color: white; } /* Added for BullMQ state */
+        .status-processing { background-color: #0d6efd; color: white; } /* Keep for compatibility if needed */
         .status-completed { background-color: #198754; color: white; }
         .status-failed { background-color: #dc3545; color: white; }
+        .status-delayed { background-color: #ffc107; color: black; } /* Added for BullMQ state */
+        .status-paused { background-color: #adb5bd; color: black; } /* Added for BullMQ state */
+        .status-unknown { background-color: #adb5bd; color: black; } /* Added for BullMQ state */
         .status-not_found { background-color: #ffc107; color: black; }
         html, body { height: 100%; margin: 0; }
         .main-container { min-height: calc(100vh - 4rem); }
@@ -53,8 +58,8 @@
             <div class="w-full md:w-1/3 flex flex-col">
                 <h2 class="text-xl font-semibold mb-3 text-gray-600">Submit New Job</h2>
                 <div class="flex flex-col flex-grow-1">
-                     <label for="jobType" class="block text-sm font-medium text-gray-700 mb-1">Job Type</label>
-                     <input type="text" id="jobType" value="defaultJobType" class="w-full p-2 border border-gray-300 rounded-md mb-3 focus:ring-blue-500 focus:border-blue-500">
+                     <label for="jobName" class="block text-sm font-medium text-gray-700 mb-1">Job Name</label>
+                     <input type="text" id="jobName" value="defaultJobName" class="w-full p-2 border border-gray-300 rounded-md mb-3 focus:ring-blue-500 focus:border-blue-500">
 
                     <label for="jobPayload" class="block text-sm font-medium text-gray-700 mb-1">Job Payload (JSON)</label>
                     <textarea id="jobPayload" rows="10" class="w-full p-2 border border-gray-300 rounded-md flex-grow-1 focus:ring-blue-500 focus:border-blue-500" placeholder='{ "url": "http://example.com/file.zip", "priority": 1 }'></textarea>
@@ -79,15 +84,15 @@
 
     <script>
         const jobPayloadInput = document.getElementById('jobPayload');
-        const jobTypeInput = document.getElementById('jobType');
+        const jobNameInput = document.getElementById('jobName');
         const submitJobBtn = document.getElementById('submitJobBtn');
         const jobStatusContainer = document.getElementById('jobStatusContainer');
         const submitError = document.getElementById('submitError');
         const submitSuccess = document.getElementById('submitSuccess');
         const wsStatusDiv = document.getElementById('ws-status');
 
-        const backendUrl = 'http://localhost:3000'; // Your backend API URL
-        const socketIoUrl = 'ws://localhost:3000'; // URL for Socket.IO connection
+        const backendUrl = 'http://localhost:3000';
+        const socketIoUrl = 'ws://localhost:3000';
 
         let socket; // Socket.IO instance
 
@@ -97,13 +102,8 @@
             wsStatusDiv.textContent = 'Connecting...';
             wsStatusDiv.className = 'mb-4 text-center p-2 rounded-md bg-yellow-100 text-yellow-800';
 
-            // Initialize Socket.IO client connection
-            // No need to specify 'ws://' explicitly for socket.io client,
-            // it defaults based on the page's protocol or handles it.
-            // Use the backend base URL.
             socket = io(backendUrl, {
-                // Optional: Add transports if needed, but defaults are usually fine
-                // transports: ['websocket', 'polling']
+                // transports: ['websocket', 'polling'] // Optional
             });
 
             socket.on('connect', () => {
@@ -112,40 +112,36 @@
                 wsStatusDiv.className = 'mb-4 text-center p-2 rounded-md bg-green-100 text-green-800';
             });
 
-            // Listen for the specific event emitted by the server
             socket.on('jobStatusUpdate', (jobUpdate) => {
                 console.log('Socket.IO message received (jobStatusUpdate):', jobUpdate);
-                 if (jobUpdate && jobUpdate.id) { // Basic check for valid update structure
+                 if (jobUpdate && jobUpdate.id) {
                      updateJobStatusDisplay(jobUpdate);
                  } else {
                      console.warn("Received non-standard jobStatusUpdate message:", jobUpdate);
                  }
             });
 
-             // Listen for other potential events (optional)
              socket.on('jobQueued', (jobQueuedData) => {
                  console.log('Socket.IO message received (jobQueued):', jobQueuedData);
-                 // You might want to add the job to the display immediately here too
-                 updateJobStatusDisplay(jobQueuedData); // Assuming structure is compatible
+                 if (jobQueuedData && jobQueuedData.id) {
+                    updateJobStatusDisplay(jobQueuedData);
+                 }
              });
 
             socket.on('connect_error', (err) => {
                 console.error('Socket.IO connection error:', err);
                 wsStatusDiv.textContent = `Connection Error: ${err.message}`;
                 wsStatusDiv.className = 'mb-4 text-center p-2 rounded-md bg-red-100 text-red-800';
-                // Socket.IO client handles reconnection attempts automatically by default
             });
 
             socket.on('disconnect', (reason) => {
                 console.log('Socket.IO disconnected:', reason);
                 wsStatusDiv.textContent = `Disconnected: ${reason}`;
                 wsStatusDiv.className = 'mb-4 text-center p-2 rounded-md bg-red-100 text-red-800';
-                // If the server disconnects, it will attempt to reconnect automatically.
-                // If the reason is 'io client disconnect', it means socket.disconnect() was called manually.
             });
         }
 
-        // --- Job Status Display (Function remains the same) ---
+        // --- Job Status Display ---
 
         function updateJobStatusDisplay(jobData) {
             const placeholder = jobStatusContainer.querySelector('p.text-gray-500');
@@ -161,22 +157,24 @@
                 jobStatusContainer.insertBefore(jobCard, jobStatusContainer.firstChild);
             }
 
-            let statusClass = 'status-queued';
-            switch (jobData.status) {
-                case 'processing': statusClass = 'status-processing'; break;
-                case 'completed': statusClass = 'status-completed'; break;
-                case 'failed': statusClass = 'status-failed'; break;
-                case 'not_found': statusClass = 'status-not_found'; break;
-            }
+            let statusClass = `status-${jobData.status || 'unknown'}`;
+            if (jobData.status === 'processing') statusClass = 'status-active'; // Map legacy status
+
+            // *** FIX: Use standard JS checks instead of 'as any' ***
+            const progressValue = (typeof jobData.progress === 'object' && jobData.progress !== null && jobData.progress.hasOwnProperty('percentage'))
+                                    ? jobData.progress.percentage
+                                    : (typeof jobData.progress === 'number' ? jobData.progress : 0);
 
             jobCard.innerHTML = `
                 <h3>
-                    Job ID: ${jobData.id}
-                    <span class="job-status-badge ${statusClass}">${jobData.status}</span>
+                    Job: ${jobData.name || 'N/A'} (${jobData.id})
+                    <span class="job-status-badge ${statusClass}">${jobData.status || 'unknown'}</span>
                 </h3>
-                ${jobData.status === 'processing' || jobData.status === 'completed' ? `
+                ${jobData.status === 'active' || jobData.status === 'completed' ? `
                     <div class="progress-bar-container">
-                        <div class="progress-bar" style="width: ${jobData.progress || 0}%">${jobData.progress || 0}%</div>
+                        <div class="progress-bar" style="width: ${progressValue}%">
+                            ${progressValue}%
+                        </div>
                     </div>
                 ` : ''}
                 ${jobData.error ? `<p class="text-red-600 text-sm mb-2"><strong>Error:</strong> ${jobData.error}</p>` : ''}
@@ -194,11 +192,11 @@
         }
 
 
-        // --- Job Submission (Function remains the same) ---
+        // --- Job Submission ---
 
         submitJobBtn.addEventListener('click', async () => {
             const payloadString = jobPayloadInput.value.trim();
-            const jobType = jobTypeInput.value.trim();
+            const jobName = jobNameInput.value.trim();
             submitError.textContent = '';
             submitSuccess.textContent = '';
 
@@ -206,8 +204,8 @@
                 submitError.textContent = 'Job payload cannot be empty.';
                 return;
             }
-             if (!jobType) {
-                submitError.textContent = 'Job type cannot be empty.';
+             if (!jobName) {
+                submitError.textContent = 'Job name cannot be empty.';
                 return;
             }
 
@@ -228,7 +226,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ type: jobType, payload: payload }),
+                    body: JSON.stringify({ name: jobName, payload: payload }),
                 });
 
                 const result = await response.json();
@@ -239,14 +237,7 @@
 
                 submitSuccess.textContent = `Job submitted successfully! Job ID: ${result.jobId}`;
                 jobPayloadInput.value = '';
-                // No need to manually add the card here if the backend emits 'jobQueued'
-                // Otherwise, keep this:
-                // updateJobStatusDisplay({
-                //     id: result.jobId,
-                //     status: 'queued',
-                //     progress: 0,
-                //     logs: [`[${new Date().toISOString()}] Job ${result.jobId} submitted via UI.`]
-                // });
+                // 'jobQueued' event handles UI update
 
             } catch (error) {
                 console.error('Error submitting job:', error);
@@ -258,7 +249,7 @@
         });
 
         // --- Initial Load ---
-        connectSocketIO(); // Use the new Socket.IO connection function
+        connectSocketIO(); // Start Socket.IO connection
 
     </script>
 
