@@ -81,8 +81,8 @@ app.post('/jobs', async (req: Request, res: Response) => {
 
         const jobId = job.id;
         if (!jobId) {
-             console.error('Job added but ID is missing:', job);
-             return res.status(500).json({ message: 'Failed to get job ID after adding to queue' });
+            console.error('Job added but ID is missing:', job);
+            return res.status(500).json({ message: 'Failed to get job ID after adding to queue' });
         }
 
         console.log(`Job ${jobId} (${name}) added to queue.`);
@@ -120,17 +120,17 @@ app.get('/jobs/:jobId', async (req: Request, res: Response) => {
 
         if (!job && !cachedStatus) {
             if (cachedStatus) {
-                 res.status(200).json(cachedStatus);
-                 return;
+                res.status(200).json(cachedStatus);
+                return;
             }
             return res.status(404).json({ message: 'Job not found' });
         }
 
         let currentState: JobStatus['status'] = 'unknown';
         if (job) {
-             currentState = await job.getState();
+            currentState = await job.getState();
         } else if (cachedStatus) {
-             currentState = cachedStatus.status;
+            currentState = cachedStatus.status;
         }
 
 
@@ -164,46 +164,46 @@ io.on('connection', (socket) => {
     });
 
     socket.on('getJobStatus', async (jobId: string) => {
-         try {
+        try {
             const job = await myQueue.getJob(jobId);
             const cachedStatus = jobStore.get(jobId);
-             if (!job && !cachedStatus) {
-                 socket.emit('jobStatusUpdate', { id: jobId, status: 'not_found' });
-                 return;
-             }
-             let currentState: JobStatus['status'] = 'unknown';
-             if (job) { currentState = await job.getState(); }
-             else if (cachedStatus) { currentState = cachedStatus.status; }
+            if (!job && !cachedStatus) {
+                socket.emit('jobStatusUpdate', { id: jobId, status: 'not_found' });
+                return;
+            }
+            let currentState: JobStatus['status'] = 'unknown';
+            if (job) { currentState = await job.getState(); }
+            else if (cachedStatus) { currentState = cachedStatus.status; }
 
-             const combinedStatus: JobStatus = {
-                 id: jobId,
-                 name: job?.name ?? cachedStatus?.name ?? 'unknown',
-                 status: currentState,
-                 progress: job?.progress ?? cachedStatus?.progress ?? 0,
-                 logs: cachedStatus?.logs ?? [],
-                 result: job?.returnvalue ?? cachedStatus?.result,
-                 error: job?.failedReason ?? cachedStatus?.error,
-                 timestamp: job?.timestamp ?? cachedStatus?.timestamp ?? Date.now(),
-             };
-             socket.emit('jobStatusUpdate', combinedStatus);
-         } catch (error: any) {
-             console.error(`WS: Error getting job ${jobId}:`, error);
-             socket.emit('jobStatusError', { jobId, message: 'Failed to retrieve job status', error: error.message });
-         }
+            const combinedStatus: JobStatus = {
+                id: jobId,
+                name: job?.name ?? cachedStatus?.name ?? 'unknown',
+                status: currentState,
+                progress: job?.progress ?? cachedStatus?.progress ?? 0,
+                logs: cachedStatus?.logs ?? [],
+                result: job?.returnvalue ?? cachedStatus?.result,
+                error: job?.failedReason ?? cachedStatus?.error,
+                timestamp: job?.timestamp ?? cachedStatus?.timestamp ?? Date.now(),
+            };
+            socket.emit('jobStatusUpdate', combinedStatus);
+        } catch (error: any) {
+            console.error(`WS: Error getting job ${jobId}:`, error);
+            socket.emit('jobStatusError', { jobId, message: 'Failed to retrieve job status', error: error.message });
+        }
     });
 });
 
 // --- Listen to BullMQ Events and Broadcast via WebSocket ---
 
 function updateAndBroadcast(jobId: string, updates: Partial<JobStatus>) {
-     const currentStatus = jobStore.get(jobId) || {
-         id: jobId,
-         name: 'unknown',
-         status: 'active',
-         progress: 0,
-         logs: [],
-         timestamp: Date.now() // Use current time if creating new cache entry
-     };
+    const currentStatus = jobStore.get(jobId) || {
+        id: jobId,
+        name: 'unknown',
+        status: 'active',
+        progress: 0,
+        logs: [],
+        timestamp: Date.now() // Use current time if creating new cache entry
+    };
 
     const newStatus = {
         ...currentStatus,
@@ -254,7 +254,7 @@ queueEvents.on('completed', ({ jobId, returnvalue }, timestamp) => {
 
 queueEvents.on('failed', ({ jobId, failedReason }, timestamp) => {
     console.log(`Job ${jobId} failed:`, failedReason);
-     // Use timestamp from event if valid, otherwise current time
+    // Use timestamp from event if valid, otherwise current time
     const eventTime = (timestamp && !isNaN(Number(timestamp))) ? new Date(timestamp) : new Date();
     updateAndBroadcast(jobId, {
         status: 'failed',
@@ -265,23 +265,23 @@ queueEvents.on('failed', ({ jobId, failedReason }, timestamp) => {
 
 // *** FIX: Use current time for 'active' event log ***
 queueEvents.on('active', ({ jobId, prev }) => { // Removed timestamp parameter from handler signature
-     console.log(`Job ${jobId} is now active (previous state: ${prev})`);
-     const eventTime = new Date(); // Get current time when event is handled
-     myQueue.getJob(jobId).then(job => {
-         updateAndBroadcast(jobId, {
-             status: 'active',
-             name: job?.name, // Update name if available
-             timestamp: job?.timestamp, // Ensure we store the original creation timestamp
-             logs: [`[${eventTime.toISOString()}] Job started processing.`] // Use current time for log
-         });
-     }).catch(err => {
-          console.error(`[${jobId}] Error fetching job details during 'active' event:`, err);
-          // Still update status even if fetching details fails
-          updateAndBroadcast(jobId, {
-              status: 'active',
-              logs: [`[${eventTime.toISOString()}] Job started processing (details fetch failed).`]
-          });
-     });
+    console.log(`Job ${jobId} is now active (previous state: ${prev})`);
+    const eventTime = new Date(); // Get current time when event is handled
+    myQueue.getJob(jobId).then(job => {
+        updateAndBroadcast(jobId, {
+            status: 'active',
+            name: job?.name, // Update name if available
+            timestamp: job?.timestamp, // Ensure we store the original creation timestamp
+            logs: [`[${eventTime.toISOString()}] Job started processing.`] // Use current time for log
+        });
+    }).catch(err => {
+        console.error(`[${jobId}] Error fetching job details during 'active' event:`, err);
+        // Still update status even if fetching details fails
+        updateAndBroadcast(jobId, {
+            status: 'active',
+            logs: [`[${eventTime.toISOString()}] Job started processing (details fetch failed).`]
+        });
+    });
 });
 
 

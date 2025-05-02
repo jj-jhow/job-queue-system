@@ -64,7 +64,7 @@ async function processJob(job: Job): Promise<any> {
         // Throw the error - BullMQ will mark the job as failed with this reason
         throw error; // Re-throw the error to ensure BullMQ handles it as a failure
     } finally {
-         console.log(`--- [${id}] Finished Job ---`);
+        console.log(`--- [${id}] Finished Job ---`);
     }
 }
 
@@ -77,7 +77,7 @@ const worker = new Worker(
     processJob,     // The function to process each job
     {
         connection,
-        concurrency: 5, // Number of jobs to process concurrently (adjust as needed)
+        concurrency: 1, // Number of jobs to process concurrently (adjust as needed)
         limiter: {      // Optional rate limiting
             max: 10,       // Max 10 jobs
             duration: 1000 // per 1 second
