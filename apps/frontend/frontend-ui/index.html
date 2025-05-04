@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Submitter & Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+        integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"
+        integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO"
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="src/styles.css">
+</head>
+
+<body class="bg-gray-100 p-4 md:p-8 h-full">
+    <div class="container mx-auto bg-white rounded-lg shadow-lg p-6 h-full flex flex-col">
+        <h1 class="text-2xl font-bold mb-6 text-center text-gray-700">Job Submitter & Monitor</h1>
+
+        <div id="ws-status" class="mb-4 text-center p-2 rounded-md">Initializing...</div>
+
+        <div class="flex flex-col md:flex-row gap-6 flex-grow-1">
+            <!-- Job Submission Form -->
+            <div class="w-full md:w-1/3 flex flex-col">
+                <h2 class="text-xl font-semibold mb-3 text-gray-600">Submit New Job</h2>
+                <div class="flex flex-col flex-grow-1">
+                    <label for="jobName" class="block text-sm font-medium text-gray-700 mb-1">Job Name</label>
+                    <input type="text" id="jobName" value="defaultJobName"
+                        class="w-full p-2 border border-gray-300 rounded-md mb-3 focus:ring-blue-500 focus:border-blue-500">
+
+                    <label for="jobPayload" class="block text-sm font-medium text-gray-700 mb-1">Job Payload
+                        (JSON)</label>
+                    <textarea id="jobPayload" rows="10"
+                        class="w-full p-2 border border-gray-300 rounded-md flex-grow-1 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder='{ "url": "http://example.com/file.zip", "priority": 1 }'></textarea>
+
+                    <button id="submitJobBtn"
+                        class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out disabled:opacity-50">
+                        Submit Job
+                    </button>
+                    <div id="submitError" class="text-red-600 mt-2 text-sm"></div>
+                    <div id="submitSuccess" class="text-green-600 mt-2 text-sm"></div>
+                </div>
+            </div>
+
+            <!-- Job Status Display -->
+            <div class="w-full md:w-2/3">
+                <h2 class="text-xl font-semibold mb-3 text-gray-600">Job Status</h2>
+                <div id="jobStatusContainer"
+                    class="h-96 md:h-full overflow-y-auto bg-gray-50 p-4 border border-gray-200 rounded-md">
+                    <p class="text-gray-500">Job statuses will appear here...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./src/main.ts"></script>
+</body>
+
+</html>
