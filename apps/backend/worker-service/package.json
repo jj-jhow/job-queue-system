@@ -1,0 +1,24 @@
+{
+    "name": "worker-service",
+    "version": "1.0.0",
+    "description": "Worker service processing jobs from a BullMQ queue",
+    "main": "dist/worker.js",
+    "scripts": {
+      "build": "tsc",
+      "start": "node dist/worker.js",
+      "dev": "tsc && node dist/worker.js",
+      "watch": "tsc -w & nodemon dist/worker.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+      "bullmq": "^5.7.10"
+    },
+    "devDependencies": {
+      "@types/node": "^16.0.0",
+      "typescript": "^4.5.0",
+      "nodemon": "^2.0.15"
+    }
+  }
+  
