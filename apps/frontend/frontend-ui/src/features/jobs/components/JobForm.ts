@@ -1,89 +1,298 @@
-import { JobSubmission } from '../types/job.types';
 import { jobApiService } from '../services/job-api.service';
+import { AssetExportParams, AssetImportParams, AssetDecimateParams, AssetTagParams } from '../types/job.types';
 
-export class JobFormComponent {
-    private nameInput: HTMLInputElement;
-    private payloadInput: HTMLTextAreaElement;
+export class AssetJobForm {
+    private jobTypeSelect: HTMLSelectElement;
+    private parametersContainer: HTMLElement;
     private submitButton: HTMLButtonElement;
     private errorElement: HTMLElement;
     private successElement: HTMLElement;
     
-    constructor(
-        nameInputId: string,
-        payloadInputId: string,
-        submitButtonId: string,
-        errorElementId: string,
-        successElementId: string
-    ) {
-        this.nameInput = document.getElementById(nameInputId) as HTMLInputElement;
-        this.payloadInput = document.getElementById(payloadInputId) as HTMLTextAreaElement;
-        this.submitButton = document.getElementById(submitButtonId) as HTMLButtonElement;
-        this.errorElement = document.getElementById(errorElementId) as HTMLElement;
-        this.successElement = document.getElementById(successElementId) as HTMLElement;
+    constructor() {
+        this.jobTypeSelect = document.getElementById('jobType') as HTMLSelectElement;
+        this.parametersContainer = document.getElementById('jobParameters') as HTMLElement;
+        this.submitButton = document.getElementById('submitJobBtn') as HTMLButtonElement;
+        this.errorElement = document.getElementById('submitError') as HTMLElement;
+        this.successElement = document.getElementById('submitSuccess') as HTMLElement;
         
-        if (!this.nameInput || !this.payloadInput || !this.submitButton || !this.errorElement || !this.successElement) {
-            throw new Error('One or more required elements not found');
+        if (!this.jobTypeSelect || !this.parametersContainer || !this.submitButton || 
+            !this.errorElement || !this.successElement) {
+            console.error("Required form elements not found");
+            return;
         }
         
-        this.submitButton.addEventListener('click', this.handleSubmit.bind(this));
+        // Set up event listeners
+        this.jobTypeSelect.addEventListener('change', () => this.updateParameterFields());
+        this.submitButton.addEventListener('click', () => this.handleSubmit());
+    }
+    
+    private updateParameterFields(): void {
+        const jobType = this.jobTypeSelect.value;
+        this.parametersContainer.innerHTML = '';
+        
+        if (!jobType) return;
+        
+        switch (jobType) {
+            case 'asset-export':
+                this.createExportForm();
+                break;
+            case 'asset-import':
+                this.createImportForm();
+                break;
+            case 'asset-decimate':
+                this.createDecimateForm();
+                break;
+            case 'asset-tag':
+                this.createTagForm();
+                break;
+        }
+    }
+    
+    private createExportForm(): void {
+        const fields = [
+            { id: 'input', label: 'Input File Path', type: 'text', required: true, placeholder: 'models/source.blend' },
+            { id: 'output', label: 'Output File Path', type: 'text', required: true, placeholder: 'exports/output.fbx' },
+            { 
+                id: 'format', 
+                label: 'Format', 
+                type: 'select', 
+                options: [
+                    { value: 'fbx', label: 'FBX' },
+                    { value: 'obj', label: 'OBJ' },
+                    { value: 'gltf', label: 'glTF' },
+                    { value: 'usd', label: 'USD' }
+                ]
+            },
+            { id: 'quality', label: 'Quality (1-100)', type: 'number', min: 1, max: 100, value: 75 }
+        ];
+        
+        this.renderFields(fields);
+    }
+    
+    private createImportForm(): void {
+        const fields = [
+            { id: 'source', label: 'Source File Path', type: 'text', required: true, placeholder: 'downloads/model.fbx' },
+            { id: 'destination', label: 'Destination Directory', type: 'text', required: true, placeholder: 'project/assets/' },
+            { id: 'scale', label: 'Scale Factor', type: 'number', step: 0.1, value: 1.0 },
+            { id: 'fix_orientation', label: 'Fix Orientation', type: 'checkbox' }
+        ];
+        
+        this.renderFields(fields);
+    }
+    
+    private createDecimateForm(): void {
+        const fields = [
+            { id: 'input', label: 'Input Model Path', type: 'text', required: true, placeholder: 'models/high_poly.obj' },
+            { id: 'output', label: 'Output Model Path', type: 'text', required: true, placeholder: 'models/low_poly.obj' },
+            { id: 'reduction', label: 'Reduction Percentage', type: 'number', min: 1, max: 99, value: 50 },
+            { id: 'preserve_uvs', label: 'Preserve UVs', type: 'checkbox', checked: true }
+        ];
+        
+        this.renderFields(fields);
+    }
+    
+    private createTagForm(): void {
+        const fields = [
+            { id: 'target', label: 'Target Path', type: 'text', required: true, placeholder: 'models/assets' },
+            { id: 'tags', label: 'Tags (space separated)', type: 'text', required: true, placeholder: 'environment outdoor medieval' },
+            { id: 'category', label: 'Tag Category', type: 'text', value: 'general' },
+            { id: 'replace', label: 'Replace Existing Tags', type: 'checkbox' }
+        ];
+        
+        this.renderFields(fields);
+    }
+    
+    private renderFields(fields: any[]): void {
+        fields.forEach(field => {
+            const fieldContainer = document.createElement('div');
+            fieldContainer.className = 'mb-3';
+            
+            const label = document.createElement('label');
+            label.htmlFor = field.id;
+            label.textContent = field.label;
+            label.className = 'block text-sm font-medium text-gray-700 mb-1';
+            
+            let input: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+            
+            if (field.type === 'select') {
+                input = document.createElement('select');
+                field.options.forEach((option: any) => {
+                    const optElement = document.createElement('option');
+                    optElement.value = option.value;
+                    optElement.textContent = option.label;
+                    input.appendChild(optElement);
+                });
+            } else if (field.type === 'textarea') {
+                input = document.createElement('textarea');
+                input.rows = field.rows || 3;
+            } else {
+                input = document.createElement('input');
+                input.type = field.type;
+                
+                if (field.type === 'number') {
+                    if (field.min !== undefined) input.min = String(field.min);
+                    if (field.max !== undefined) input.max = String(field.max);
+                    if (field.step !== undefined) input.step = String(field.step);
+                }
+                
+                if (field.type === 'checkbox' && field.checked) {
+                    input.checked = true;
+                }
+            }
+            
+            input.id = field.id;
+            input.name = field.id;
+            
+            if (field.type !== 'checkbox') {
+                input.className = 'w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500';
+            } else {
+                input.className = 'mr-2';
+                label.className = 'flex items-center text-sm font-medium text-gray-700';
+                label.prepend(input);
+                fieldContainer.appendChild(label);
+                this.parametersContainer.appendChild(fieldContainer);
+                return;
+            }
+            
+            if (field.value !== undefined && field.type !== 'checkbox') {
+                input.value = field.value;
+            }
+            
+            if (field.placeholder) {
+                input.placeholder = field.placeholder;
+            }
+            
+            if (field.required) {
+                input.required = true;
+            }
+            
+            fieldContainer.appendChild(label);
+            if (field.type !== 'checkbox') {
+                fieldContainer.appendChild(input);
+            }
+            this.parametersContainer.appendChild(fieldContainer);
+        });
     }
     
     private async handleSubmit(): Promise<void> {
-        const payloadString = this.payloadInput.value.trim();
-        const jobName = this.nameInput.value.trim();
         this.errorElement.textContent = '';
         this.successElement.textContent = '';
         
-        if (!payloadString) {
-            this.errorElement.textContent = 'Job payload cannot be empty.';
+        const jobType = this.jobTypeSelect.value;
+        
+        if (!jobType) {
+            this.errorElement.textContent = 'Please select a job type';
             return;
         }
-        
-        if (!jobName) {
-            this.errorElement.textContent = 'Job name cannot be empty.';
-            return;
-        }
-        
-        let payload;
-        try {
-            payload = JSON.parse(payloadString);
-        } catch (error) {
-            if (error instanceof Error) {
-                this.errorElement.textContent = 'Invalid JSON payload: ' + error.message;
-            }
-            return;
-        }
-        
-        this.setSubmitButtonState(true);
         
         try {
-            const jobData: JobSubmission = {
-                name: jobName,
-                payload
-            };
+            this.submitButton.disabled = true;
+            this.submitButton.textContent = 'Submitting...';
             
-            const result = await jobApiService.submitJob(jobData);
+            const scriptParams = this.collectParameters(jobType);
+            if (!scriptParams) return;
+            
+            const result = await jobApiService.submitJob({
+                name: jobType,
+                payload: { scriptParams }
+            });
             
             this.successElement.textContent = `Job submitted successfully! Job ID: ${result.jobId}`;
-            this.payloadInput.value = '';
+            this.jobTypeSelect.value = '';
+            this.parametersContainer.innerHTML = '';
             
         } catch (error) {
             console.error('Error submitting job:', error);
-            if (error instanceof Error) {
-                this.errorElement.textContent = 'Failed to submit job: ' + error.message;
-            }
+            this.errorElement.textContent = error instanceof Error 
+                ? `Error submitting job: ${error.message}`
+                : 'Unknown error submitting job';
         } finally {
-            this.setSubmitButtonState(false);
-        }
-    }
-    
-    private setSubmitButtonState(isSubmitting: boolean): void {
-        if (isSubmitting) {
-            this.submitButton.disabled = true;
-            this.submitButton.textContent = 'Submitting...';
-        } else {
             this.submitButton.disabled = false;
             this.submitButton.textContent = 'Submit Job';
         }
+    }
+    
+    private collectParameters(jobType: string): any {
+        switch (jobType) {
+            case 'asset-export':
+                return this.collectExportParams();
+            case 'asset-import':
+                return this.collectImportParams();
+            case 'asset-decimate':
+                return this.collectDecimateParams();
+            case 'asset-tag':
+                return this.collectTagParams();
+            default:
+                this.errorElement.textContent = `Unknown job type: ${jobType}`;
+                return null;
+        }
+    }
+    
+    private collectExportParams(): any {
+        const input = (document.getElementById('input') as HTMLInputElement)?.value;
+        const output = (document.getElementById('output') as HTMLInputElement)?.value;
+        
+        if (!input || !output) {
+            this.errorElement.textContent = 'Input and output file paths are required';
+            return null;
+        }
+        
+        return {
+            input,
+            output,
+            format: (document.getElementById('format') as HTMLSelectElement)?.value,
+            quality: parseInt((document.getElementById('quality') as HTMLInputElement)?.value || '75')
+        };
+    }
+    
+    private collectImportParams(): any {
+        const source = (document.getElementById('source') as HTMLInputElement)?.value;
+        const destination = (document.getElementById('destination') as HTMLInputElement)?.value;
+        
+        if (!source || !destination) {
+            this.errorElement.textContent = 'Source file and destination directory are required';
+            return null;
+        }
+        
+        return {
+            source,
+            destination,
+            scale: parseFloat((document.getElementById('scale') as HTMLInputElement)?.value || '1.0'),
+            fix_orientation: (document.getElementById('fix_orientation') as HTMLInputElement)?.checked
+        };
+    }
+    
+    private collectDecimateParams(): any {
+        const input = (document.getElementById('input') as HTMLInputElement)?.value;
+        const output = (document.getElementById('output') as HTMLInputElement)?.value;
+        
+        if (!input || !output) {
+            this.errorElement.textContent = 'Input and output model paths are required';
+            return null;
+        }
+        
+        return {
+            input,
+            output,
+            reduction: parseInt((document.getElementById('reduction') as HTMLInputElement)?.value || '50'),
+            preserve_uvs: (document.getElementById('preserve_uvs') as HTMLInputElement)?.checked
+        };
+    }
+    
+    private collectTagParams(): any {
+        const target = (document.getElementById('target') as HTMLInputElement)?.value;
+        const tagsInput = (document.getElementById('tags') as HTMLInputElement)?.value;
+        
+        if (!target || !tagsInput) {
+            this.errorElement.textContent = 'Target path and tags are required';
+            return null;
+        }
+        
+        return {
+            target,
+            tags: tagsInput.split(/\s+/).filter(tag => tag.trim() !== ''),
+            category: (document.getElementById('category') as HTMLInputElement)?.value || 'general',
+            replace: (document.getElementById('replace') as HTMLInputElement)?.checked
+        };
     }
 }

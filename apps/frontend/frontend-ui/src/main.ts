@@ -1,4 +1,4 @@
-import { JobFormComponent } from './features/jobs/components/JobForm';
+import { AssetJobForm } from './features/jobs/components/JobForm';
 import { JobListComponent } from './features/jobs/components/JobList';
 import { WebSocketStatusComponent } from './shared/components/WebSocketStatus';
 import { websocketService } from './shared/services/websocket.service';
@@ -9,14 +9,8 @@ websocketService.on('connectionStatus', (statusData) => {
     wsStatusComponent.updateStatus(statusData);
 });
 
-// Initialize job form component
-const jobForm = new JobFormComponent(
-    'jobName',
-    'jobPayload',
-    'submitJobBtn',
-    'submitError',
-    'submitSuccess'
-);
+// Initialize asset job form component
+const assetJobForm = new AssetJobForm();
 
 // Initialize job list component
 const jobList = new JobListComponent('jobStatusContainer');
@@ -24,4 +18,4 @@ const jobList = new JobListComponent('jobStatusContainer');
 // Connect to WebSocket server
 websocketService.connect();
 
-console.log('Job Queue System UI initialized');
+console.log('Asset Pipeline Job System UI initialized');

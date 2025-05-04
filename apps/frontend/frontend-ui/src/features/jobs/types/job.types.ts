@@ -19,6 +19,35 @@ export interface JobSubmission {
     payload: any;
 }
 
+// New interfaces for asset pipeline
+export interface AssetExportParams {
+    input: string;
+    output: string;
+    format?: 'fbx' | 'obj' | 'gltf' | 'usd';
+    quality?: number;
+}
+
+export interface AssetImportParams {
+    source: string;
+    destination: string;
+    scale?: number;
+    fix_orientation?: boolean;
+}
+
+export interface AssetDecimateParams {
+    input: string;
+    output: string;
+    reduction?: number;
+    preserve_uvs?: boolean;
+}
+
+export interface AssetTagParams {
+    target: string;
+    tags: string[];
+    category?: string;
+    replace?: boolean;
+}
+
 export interface JobSubmitResponse {
     message: string;
     jobId: string;
