@@ -5,7 +5,7 @@ import { Worker, Job, JobProgress } from 'bullmq';
 // --- Configuration ---
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
 const REDIS_PORT = parseInt(process.env.REDIS_PORT || '6379', 10);
-const JOB_QUEUE_NAME = 'jobQueueBullMQ'; // Must match the queue name in the backend
+const JOB_QUEUE_NAME = process.env.JOB_QUEUE_NAME || 'local-job-queue'; // Must match the queue name in the backend
 
 // --- Redis Connection Options for BullMQ ---
 const connection = {
@@ -70,7 +70,7 @@ async function processJob(job: Job): Promise<any> {
 
 // --- Initialize BullMQ Worker ---
 
-console.log(`Initializing BullMQ worker for queue: ${JOB_QUEUE_NAME}`);
+console.log(`Initializing worker for queue: ${JOB_QUEUE_NAME}`);
 
 const worker = new Worker(
     JOB_QUEUE_NAME, // Queue name to process
