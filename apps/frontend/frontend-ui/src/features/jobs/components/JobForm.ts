@@ -33,6 +33,9 @@ export class AssetJobForm {
         if (!jobType) return;
         
         switch (jobType) {
+            case 'asset-pipeline':
+                this.createPipelineForm();
+                break;
             case 'asset-export':
                 this.createExportForm();
                 break;
@@ -102,10 +105,52 @@ export class AssetJobForm {
         this.renderFields(fields);
     }
     
+    private createPipelineForm(): void {
+        const fields = [
+            // Import step
+            { id: 'header-import', label: '1. IMPORT SETTINGS', type: 'header' },
+            { id: 'source', label: 'Source File Path', type: 'text', required: true, placeholder: 'external/downloaded_asset.fbx' },
+            { id: 'destination', label: 'Destination Directory', type: 'text', required: true, placeholder: 'project/assets/props' },
+            { id: 'scale', label: 'Scale Factor', type: 'number', step: 0.1, value: 1.0 },
+            { id: 'fix_orientation', label: 'Fix Orientation', type: 'checkbox' },
+            
+            // Tag step
+            { id: 'header-tag', label: '2. TAG SETTINGS', type: 'header' },
+            { id: 'tags', label: 'Tags (space separated)', type: 'text', required: true, placeholder: 'prop furniture medieval' },
+            { id: 'category', label: 'Tag Category', type: 'text', value: 'asset_type', required: false },
+            
+            // Decimate step
+            { id: 'header-decimate', label: '3. DECIMATE SETTINGS', type: 'header' },
+            { id: 'reduction', label: 'Reduction Percentage', type: 'number', min: 1, max: 99, value: 50 },
+            { id: 'preserve_uvs', label: 'Preserve UVs', type: 'checkbox', checked: true },
+            
+            // Export step
+            { id: 'header-export', label: '4. EXPORT SETTINGS', type: 'header' },
+            { id: 'format', label: 'Export Format', type: 'select', options: [
+                { value: 'fbx', label: 'FBX' },
+                { value: 'obj', label: 'OBJ' },
+                { value: 'gltf', label: 'glTF' },
+                { value: 'usd', label: 'USD' }
+            ]},
+            { id: 'quality', label: 'Export Quality (1-100)', type: 'number', min: 1, max: 100, value: 75 }
+        ];
+        
+        this.renderFields(fields);
+    }
+    
     private renderFields(fields: any[]): void {
         fields.forEach(field => {
             const fieldContainer = document.createElement('div');
             fieldContainer.className = 'mb-3';
+            
+            if (field.type === 'header') {
+                const header = document.createElement('h3');
+                header.className = 'font-semibold text-gray-700 mt-4 mb-2 border-b pb-1';
+                header.textContent = field.label;
+                fieldContainer.appendChild(header);
+                this.parametersContainer.appendChild(fieldContainer);
+                return;
+            }
             
             const label = document.createElement('label');
             label.htmlFor = field.id;
@@ -214,6 +259,8 @@ export class AssetJobForm {
     
     private collectParameters(jobType: string): any {
         switch (jobType) {
+            case 'asset-pipeline':
+                return this.collectPipelineParams();
             case 'asset-export':
                 return this.collectExportParams();
             case 'asset-import':
@@ -293,6 +340,62 @@ export class AssetJobForm {
             tags: tagsInput.split(/\s+/).filter(tag => tag.trim() !== ''),
             category: (document.getElementById('category') as HTMLInputElement)?.value || 'general',
             replace: (document.getElementById('replace') as HTMLInputElement)?.checked
+        };
+    }
+
+    private collectPipelineParams(): any {
+        // Get the base model information
+        const source = (document.getElementById('source') as HTMLInputElement)?.value;
+        const destination = (document.getElementById('destination') as HTMLInputElement)?.value;
+        
+        if (!source || !destination) {
+            this.errorElement.textContent = 'Source file and destination directory are required';
+            return null;
+        }
+        
+        // Derive filenames for the pipeline
+        const fileName = source.split('/').pop() || '';
+        const baseName = fileName.split('.')[0];
+        const importedPath = `${destination}/${fileName}`;
+        const decimatedPath = `${destination}/${baseName}_decimated.${fileName.split('.').pop()}`;
+        const exportFormat = (document.getElementById('format') as HTMLSelectElement)?.value || 'fbx';
+        const finalPath = `${destination}/${baseName}_final.${exportFormat}`;
+
+        return {
+            // Pipeline parameters
+            pipeline: true,
+            
+            // Import parameters
+            import: {
+                source: source,
+                destination: destination,
+                scale: parseFloat((document.getElementById('scale') as HTMLInputElement)?.value || '1.0'),
+                fix_orientation: (document.getElementById('fix_orientation') as HTMLInputElement)?.checked
+            },
+            
+            // Tag parameters
+            tag: {
+                target: importedPath,
+                tags: (document.getElementById('tags') as HTMLInputElement)?.value?.split(/\s+/).filter(t => t) || [],
+                category: (document.getElementById('category') as HTMLInputElement)?.value || 'asset_type',
+                replace: false
+            },
+            
+            // Decimate parameters
+            decimate: {
+                input: importedPath,
+                output: decimatedPath,
+                reduction: parseInt((document.getElementById('reduction') as HTMLInputElement)?.value || '50'),
+                preserve_uvs: (document.getElementById('preserve_uvs') as HTMLInputElement)?.checked
+            },
+            
+            // Export parameters
+            export: {
+                input: decimatedPath,
+                output: finalPath,
+                format: exportFormat,
+                quality: parseInt((document.getElementById('quality') as HTMLInputElement)?.value || '75')
+            }
         };
     }
 }
