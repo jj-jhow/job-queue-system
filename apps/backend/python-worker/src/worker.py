@@ -122,7 +122,81 @@ def execute_script(job_id, script_type, params):
             "output": stdout_lines if 'stdout_lines' in locals() else []
         }
 
-# Modify the process_job method to use execute_script
+def execute_pipeline(job_id, params):
+    """
+    Execute a full asset pipeline by running the scripts in sequence
+    """
+    logger.info(f"[{job_id}] Starting asset pipeline execution")
+    results = {}
+    
+    try:
+        # Step 1: Import
+        logger.info(f"[{job_id}] Step 1/4: Importing asset")
+        self.update_progress(job_id, {"percentage": 5, "log": "Step 1/4: Importing asset..."})
+        
+        import_params = params.get("import", {})
+        import_result = execute_script(job_id, "asset-import", import_params)
+        if not import_result.get("success", False):
+            raise Exception(f"Import step failed: {import_result.get('error', 'Unknown error')}")
+            
+        results["import"] = import_result
+        self.update_progress(job_id, {"percentage": 25, "log": "Import step completed"})
+            
+        # Step 2: Tag
+        logger.info(f"[{job_id}] Step 2/4: Tagging asset")
+        self.update_progress(job_id, {"percentage": 30, "log": "Step 2/4: Tagging asset..."})
+        
+        tag_params = params.get("tag", {})
+        tag_result = execute_script(job_id, "asset-tag", tag_params)
+        if not tag_result.get("success", False):
+            raise Exception(f"Tag step failed: {tag_result.get('error', 'Unknown error')}")
+            
+        results["tag"] = tag_result
+        self.update_progress(job_id, {"percentage": 50, "log": "Tag step completed"})
+        
+        # Step 3: Decimate
+        logger.info(f"[{job_id}] Step 3/4: Decimating model")
+        self.update_progress(job_id, {"percentage": 55, "log": "Step 3/4: Decimating model..."})
+        
+        decimate_params = params.get("decimate", {})
+        decimate_result = execute_script(job_id, "asset-decimate", decimate_params)
+        if not decimate_result.get("success", False):
+            raise Exception(f"Decimate step failed: {decimate_result.get('error', 'Unknown error')}")
+            
+        results["decimate"] = decimate_result
+        self.update_progress(job_id, {"percentage": 75, "log": "Decimate step completed"})
+        
+        # Step 4: Export
+        logger.info(f"[{job_id}] Step 4/4: Exporting final asset")
+        self.update_progress(job_id, {"percentage": 80, "log": "Step 4/4: Exporting final asset..."})
+        
+        export_params = params.get("export", {})
+        export_result = execute_script(job_id, "asset-export", export_params)
+        if not export_result.get("success", False):
+            raise Exception(f"Export step failed: {export_result.get('error', 'Unknown error')}")
+            
+        results["export"] = export_result
+        self.update_progress(job_id, {"percentage": 95, "log": "Export step completed"})
+        
+        # Complete pipeline
+        logger.info(f"[{job_id}] Pipeline execution completed successfully")
+        self.update_progress(job_id, {"percentage": 100, "log": "Pipeline execution completed"})
+        
+        return {
+            "success": True,
+            "message": "Asset pipeline executed successfully",
+            "steps": results
+        }
+        
+    except Exception as e:
+        logger.exception(f"[{job_id}] Pipeline execution failed")
+        return {
+            "success": False,
+            "error": str(e),
+            "steps": results
+        }
+
+# Updated process_job method
 def process_job(self, job_data):
     """
     Process a job from the queue with locking.
@@ -141,6 +215,28 @@ def process_job(self, job_data):
             {"percentage": 0, "log": f"Starting job {name} processing from Python worker"},
         )
         
+        # Check if this is a pipeline job
+        if name == "asset-pipeline":
+            script_params = data.get("scriptParams", {})
+            
+            if script_params.get("pipeline"):
+                self.update_progress(job_id, {"percentage": 2, "log": "Starting asset pipeline job..."})
+                
+                result = execute_pipeline(job_id, script_params)
+                
+                if not result.get("success", False):
+                    raise Exception(f"Pipeline execution failed: {result.get('error', 'Unknown error')}")
+                
+                output_result = {
+                    "message": "Asset pipeline completed successfully",
+                    "pipelineOutput": result,
+                    "processedBy": "python-worker"
+                }
+                
+                self.complete_job(job_id, output_result)
+                return True
+        
+        # Proceed with other job types as before
         # Determine if this is a script execution job
         script_jobs = ["asset-export", "asset-import", "asset-decimate", "asset-tag"]
         

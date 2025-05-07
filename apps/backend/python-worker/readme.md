@@ -27,7 +27,7 @@ pip install -r requirements.txt
 ## Running the Worker
 
 ```bash
-python src/python_worker.py
+python src/worker.py
 ```
 
 ### Command Line Arguments
@@ -38,7 +38,7 @@ python src/python_worker.py
 
 Example:
 ```bash
-python src/python_worker.py --host redis-server --port 6379
+python src/worker.py --host redis-server --port 6379
 ```
 
 ## Environment Variables
