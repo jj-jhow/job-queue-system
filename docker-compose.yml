@@ -1,0 +1,87 @@
+# docker-compose.yml
+version: '3.8' # Specify docker-compose version
+
+services:
+  # Redis Service
+  redis:
+    image: redis:7-alpine # Use official Redis image (Alpine version is smaller)
+    container_name: jobqueue_redis
+    ports:
+      # Expose Redis port to host machine (optional, for debugging with tools like RedisInsight)
+      - "6379:6379"
+    volumes:
+      # Optional: Persist Redis data locally (useful for development)
+      - redis_data:/data
+    networks:
+      - jobqueue_network # Connect to the custom network
+
+  # Backend Service
+  backend:
+    build:
+      context: ./apps/backend/backend-service # Path to the backend Dockerfile directory
+      dockerfile: Dockerfile
+    container_name: jobqueue_backend
+    ports:
+      # Map host port 3000 to container port 3000
+      - "3000:3000"
+    environment:
+      # Environment variables needed by the backend service
+      - PORT=3000
+      - HOST=localhost
+      - NODE_ENV=development # Or production
+      - REDIS_HOST=redis # Service name defined in this file
+      - REDIS_PORT=6379
+      - JOB_QUEUE_NAME=local-job-queue
+      # Add any other environment variables your backend needs
+    depends_on:
+      - redis # Ensure Redis starts before the backend
+    networks:
+      - jobqueue_network
+    volumes:
+       # Optional: Mount local code for development hot-reloading (if using nodemon)
+       # - ./apps/backend/backend-service/src:/usr/src/app/src
+       # Make sure node_modules aren't overwritten by the mount
+       # - /usr/src/app/node_modules
+       # Note: If mounting code, you might adjust the Dockerfile CMD/ENTRYPOINT
+       #       and install dev dependencies
+       - ./apps/backend/backend-service:/usr/src/app # Mount the entire directory for easier debugging access if needed
+       - /usr/src/app/node_modules # Anonymous volume to prevent local node_modules overwriting container's
+       - /usr/src/app/dist # Anonymous volume to prevent local dist overwriting container's
+
+  # Worker Service
+  worker:
+    build:
+      context: ./apps/backend/worker-service # Path to the worker Dockerfile directory
+      dockerfile: Dockerfile
+    container_name: jobqueue_worker # Name for the first worker instance
+    environment:
+      - NODE_ENV=development # Or production
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      # Add any other environment variables your worker needs
+    depends_on:
+      - redis # Ensure Redis starts before the worker
+    networks:
+      - jobqueue_network
+    volumes:
+       # Optional: Mount local code for development hot-reloading
+       # - ./apps/backend/worker-service/src:/usr/src/app/src
+       # - /usr/src/app/node_modules
+       - ./apps/backend/worker-service:/usr/src/app
+       - /usr/src/app/node_modules
+       - /usr/src/app/dist
+    # --- To run multiple worker instances ---
+    # Remove container_name above if scaling
+    # deploy:
+    #   replicas: 3 # Specify the number of worker instances you want
+
+# Define Networks
+networks:
+  jobqueue_network:
+    driver: bridge # Default network driver
+
+# Define Volumes
+volumes:
+  redis_data: # Named volume for Redis persistence
+    driver: local
+
