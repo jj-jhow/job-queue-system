@@ -1,0 +1,46 @@
+{
+  "name": "job-queue-system",
+  "version": "1.0.0",
+  "description": "Distributed job queue system with asset pipeline",
+  "useWorkspaces": true,
+  "scripts": {
+    "start:all": "concurrently \"npm run start:backend\" \"npm run start:worker\" \"npm run start:frontend\"",
+    "start:backend": "npm --prefix apps/backend/backend-service start",
+    "start:worker": "npm --prefix apps/backend/worker-service start",
+    "start:frontend": "npm --prefix apps/frontend/frontend-ui start",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:worker\" \"npm run dev:frontend\"",
+    "dev:backend": "npm --prefix apps/backend/backend-service run dev",
+    "dev:worker": "npm --prefix apps/backend/worker-service run dev",
+    "dev:frontend": "npm --prefix apps/frontend/frontend-ui run dev",
+    "clean:all": "lerna clean",
+    "build:all": "lerna run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/job-queue-system.git"
+  },
+  "keywords": [
+    "job-queue",
+    "distributed-systems",
+    "asset-pipeline",
+    "redis",
+    "typescript",
+    "python"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "lerna": "^7.4.2"
+  },
+  "workspaces": [
+    "apps/backend/backend-service",
+    "apps/backend/worker-service",
+    "apps/frontend/frontend-ui"
+  ],
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "dependencies": {}
+}
