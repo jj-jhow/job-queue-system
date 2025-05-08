@@ -75,6 +75,29 @@ services:
     # deploy:
     #   replicas: 3 # Specify the number of worker instances you want
 
+  frontend:
+    build:
+      context: ./apps/frontend/frontend-ui # Path to the frontend Dockerfile directory
+      dockerfile: Dockerfile
+    container_name: jobqueue_frontend
+    ports:
+      # Map host port 8080 to container port 8080
+      - "5173:5173"
+    environment:
+      # Environment variables needed by the frontend service
+      - PORT=5173
+      - HOST=localhost
+      - NODE_ENV=development # Or production
+      # Add any other environment variables your frontend needs
+    networks:
+      - jobqueue_network
+    volumes:
+        # Optional: Mount local code for development hot-reloading (if using nodemon)
+        # - ./apps/frontend/src:/usr/src/app/src
+        # - /usr/src/app/node_modules
+        - ./apps/frontend/frontend-ui:/usr/src/app # Mount the entire directory for easier debugging access if needed
+        - /usr/src/app/node_modules # Anonymous volume to prevent local node_modules overwriting container's
+
 # Define Networks
 networks:
   jobqueue_network:
