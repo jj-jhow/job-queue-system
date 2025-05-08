@@ -1,4 +1,4 @@
-import { API_URL } from '../../../core/config/constants';
+import { API_URL } from '../../../config/config';
 import { JobData, JobSubmission, JobSubmitResponse } from '../types/job.types';
 
 export class JobApiService {

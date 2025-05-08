@@ -1,3 +1,4 @@
+import { JOB_STATUS_CLASSES } from '../../../constants/constants';
 import { JobData } from '../types/job.types';
 
 export class JobCardComponent {
@@ -28,8 +29,17 @@ export class JobCardComponent {
         }
         
         // Calculate status class
-        let statusClass = `status-${jobData.status || 'unknown'}`;
-        if (jobData.status === 'processing') statusClass = 'status-active'; // Map legacy status
+        let statusClass = JOB_STATUS_CLASSES.UNKNOWN;
+        switch (jobData.status) {
+            case 'waiting': statusClass = JOB_STATUS_CLASSES.WAITING; break;
+            case 'active': statusClass = JOB_STATUS_CLASSES.ACTIVE; break;
+            case 'processing': statusClass = JOB_STATUS_CLASSES.PROCESSING; break;
+            case 'completed': statusClass = JOB_STATUS_CLASSES.COMPLETED; break;
+            case 'failed': statusClass = JOB_STATUS_CLASSES.FAILED; break;
+            case 'delayed': statusClass = JOB_STATUS_CLASSES.DELAYED; break;
+            case 'paused': statusClass = JOB_STATUS_CLASSES.PAUSED; break;
+            case 'not_found': statusClass = JOB_STATUS_CLASSES.NOT_FOUND; break;
+        }
         
         // Calculate progress value
         const progressValue = (typeof jobData.progress === 'object' && jobData.progress !== null && 'percentage' in jobData.progress)

@@ -1,4 +1,4 @@
-import { WEBSOCKET_URL } from '../../core/config/constants';
+import { WEBSOCKET_URL } from '../../config/config';
 import { JobData } from '../../features/jobs/types/job.types';
 import { io, Socket } from 'socket.io-client';
 

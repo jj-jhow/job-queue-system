@@ -1,5 +1,5 @@
+import { ASSET_JOB_TYPES } from '../../../constants/constants';
 import { jobApiService } from '../services/job-api.service';
-import { AssetExportParams, AssetImportParams, AssetDecimateParams, AssetTagParams } from '../types/job.types';
 
 export class AssetJobForm {
     private jobTypeSelect: HTMLSelectElement;
@@ -33,19 +33,19 @@ export class AssetJobForm {
         if (!jobType) return;
         
         switch (jobType) {
-            case 'asset-pipeline':
+            case ASSET_JOB_TYPES.PIPELINE:
                 this.createPipelineForm();
                 break;
-            case 'asset-export':
+            case ASSET_JOB_TYPES.EXPORT:
                 this.createExportForm();
                 break;
-            case 'asset-import':
+            case ASSET_JOB_TYPES.IMPORT:
                 this.createImportForm();
                 break;
-            case 'asset-decimate':
+            case ASSET_JOB_TYPES.DECIMATE:
                 this.createDecimateForm();
                 break;
-            case 'asset-tag':
+            case ASSET_JOB_TYPES.TAG:
                 this.createTagForm();
                 break;
         }

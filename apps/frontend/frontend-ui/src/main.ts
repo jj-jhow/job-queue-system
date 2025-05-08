@@ -1,3 +1,4 @@
+import { APP_CONFIG } from './config/config';
 import { AssetJobForm } from './features/jobs/components/JobForm';
 import { JobListComponent } from './features/jobs/components/JobList';
 import { WebSocketStatusComponent } from './shared/components/WebSocketStatus';
@@ -18,4 +19,4 @@ const jobList = new JobListComponent('jobStatusContainer');
 // Connect to WebSocket server
 websocketService.connect();
 
-console.log('Asset Pipeline Job System UI initialized');
+console.log(`${APP_CONFIG.name} v${APP_CONFIG.version} initialized`);
