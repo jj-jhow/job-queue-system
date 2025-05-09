@@ -7,7 +7,7 @@ const getEnvVariable = (key: string, defaultValue: string): string => {
 };
 
 // Server configuration
-export const PORT = parseInt(getEnvVariable('PORT', '3200'));
+export const PORT = parseInt(getEnvVariable('PORT', '80'));
 export const HOST = getEnvVariable('HOST', 'localhost');
 export const NODE_ENV = getEnvVariable('NODE_ENV', 'development');
 

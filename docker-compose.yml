@@ -65,7 +65,7 @@ services:
     ports:
       - "8080:80"
     environment:
-      - PORT=3200
+      - PORT=80
       - HOST=localhost
       - NODE_ENV=development
     networks:

@@ -56,31 +56,36 @@ job-queue-system/
 ### Installation
 
 1. Clone the repository:
-     ```bash
-     git clone https://github.com/jj-jhow/job-queue-system.git
-     cd job-queue-system
-     ```
+    ```bash
+    git clone https://github.com/jj-jhow/job-queue-system.git
+    cd job-queue-system
+    ```
 
 2. Install dependencies:
-     ```bash
-     npm install
-     ```
+    ```bash
+    npm install
+    ```
 
 3. Start the services using Docker:
-     ```bash
-     docker-compose up --build
-     ```
+    ```bash
+    docker-compose up --build
+    ```
 
-     Or start individual services for development:
-     ```bash
-     # Start all services
-     npm run dev:all
+    optional parameter to run multiple worker apps
+    ```bash
+    --scale worker=<number_of_workers>
+    ``` 
 
-     # Or start specific services
-     npm run dev:backend
-     npm run dev:worker
-     npm run dev:frontend
-     ```
+    Or start individual services for development:
+    ```bash
+    # Start all services
+    npm run dev:all
+
+    # Or start specific services
+    npm run dev:backend
+    npm run dev:worker
+    npm run dev:frontend
+    ```
 
 ## Usage
 
