@@ -81,11 +81,11 @@ services:
       dockerfile: Dockerfile
     container_name: jobqueue_frontend
     ports:
-      # Map host port 8080 to container port 8080
-      - "5173:5173"
+      # Map host port 8080 to container port 80
+      - "8080:80"
     environment:
       # Environment variables needed by the frontend service
-      - PORT=5173
+      - PORT=3200
       - HOST=localhost
       - NODE_ENV=development # Or production
       # Add any other environment variables your frontend needs

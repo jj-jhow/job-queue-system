@@ -1,4 +1,4 @@
-# frontend-ui/Dockerfile
+# backend-service/Dockerfile
 
 # ---- Base Stage ----
 # Use an official Node.js runtime as a parent image (choose LTS version)
@@ -26,17 +26,16 @@ COPY . .
 RUN npm run build
 
 # ---- Release Stage ----
-FROM base AS release
+FROM nginx:alpine AS release
 WORKDIR /usr/src/app
 # Copy built artifacts from build stage
-COPY --from=build /usr/src/app/dist ./dist
-# Copy production dependencies from dependencies stage
-COPY --from=dependencies /usr/src/app/node_modules ./node_modules
-# Copy package.json (needed for potential runtime require calls)
-COPY package.json .
+COPY --from=build /usr/src/app/dist /usr/share/nginx/html
+# Copy Nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose Vite dev server port
-EXPOSE 5173
+# Expose port 80
+EXPOSE 80
 
-# Start Vite dev server
-CMD ["npm", "run", "dev", "--", "--host"]
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]
+

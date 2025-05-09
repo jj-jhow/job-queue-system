@@ -1,0 +1,38 @@
+# Ignore Node.js modules, as they will be installed within the Docker container
+node_modules
+
+# Ignore build output directory, as it will be generated within the Docker container
+dist
+build
+
+# Ignore Docker specific files
+Dockerfile
+.dockerignore
+
+# Ignore Git specific files
+.git
+.gitignore
+
+# Ignore IDE/editor specific files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Ignore environment files that might contain secrets (manage secrets via Docker env variables or secrets)
+.env
+.env.*
+!.env.example
