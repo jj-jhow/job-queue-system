@@ -1,24 +1,25 @@
 {
-    "name": "worker-service",
-    "version": "1.0.0",
-    "description": "Worker service processing jobs from a BullMQ queue",
-    "main": "dist/worker.js",
-    "scripts": {
-      "build": "tsc",
-      "start": "node dist/worker.js",
-      "dev": "tsc && node dist/worker.js",
-      "watch": "tsc -w & nodemon dist/worker.js"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "dependencies": {
-      "bullmq": "^5.7.10"
-    },
-    "devDependencies": {
-      "@types/node": "^16.0.0",
-      "typescript": "^4.5.0",
-      "nodemon": "^2.0.15"
-    }
-  }
-  
+  "name": "worker-service",
+  "version": "1.0.0",
+  "description": "A job queue worker service using BullMQ and Redis.",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "start": "tsc && node dist/index.js",
+    "build": "tsc",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "bullmq": "^1.0.0",
+    "redis": "^3.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^4.0.0",
+    "ts-node": "^10.0.0",
+    "@types/node": "^14.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "license": "MIT"
+}
