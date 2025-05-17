@@ -1,5 +1,5 @@
 // --- Configuration ---
-import * as dotenv from 'dotenv';
+import * as dotenv from '@dotenvx/dotenvx';
 // Load environment variables from .env file
 dotenv.config();
 
