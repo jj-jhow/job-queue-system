@@ -1,5 +1,5 @@
 import { Worker } from 'bullmq';
-import { REDIS_HOST, REDIS_PORT, JOB_QUEUE_NAME } from './config/config';
+import { JOB_QUEUE_NAME, redisOptions } from './config/config';
 import { processJob } from './processors/jobProcessor';
 import { gracefulShutdown } from './utils/shutdownHandler';
 
@@ -8,17 +8,7 @@ console.log(`Initializing worker for queue: ${JOB_QUEUE_NAME}`);
 const worker = new Worker(
     JOB_QUEUE_NAME,
     processJob,
-    {
-        connection: {
-            host: REDIS_HOST,
-            port: REDIS_PORT,
-        },
-        concurrency: 1,
-        limiter: {
-            max: 10,
-            duration: 1000
-        },
-    }
+    redisOptions
 );
 
 worker.on('active', (job) => {

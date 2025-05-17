@@ -1,5 +1,5 @@
 import { Queue, QueueEvents, Job, JobProgress } from 'bullmq';
-import { JOB_QUEUE_NAME, redisConnection } from '../../config/config';
+import { JOB_QUEUE_NAME, redisOptions } from '../../config/config';
 import { JobStatus } from '../../types/job.types';
 import { jobStoreService } from '../jobStore.service';
 import { socketService } from '../socket.service';
@@ -10,8 +10,8 @@ export class BullMQService implements QueueService {
     private queueEvents: QueueEvents;
     
     constructor() {
-        this.queue = new Queue(JOB_QUEUE_NAME, { connection: redisConnection });
-        this.queueEvents = new QueueEvents(JOB_QUEUE_NAME, { connection: redisConnection });
+        this.queue = new Queue(JOB_QUEUE_NAME, redisOptions);
+        this.queueEvents = new QueueEvents(JOB_QUEUE_NAME, redisOptions);
         
         this.setupEventListeners();
     }
@@ -116,8 +116,14 @@ export class BullMQService implements QueueService {
     
     async addJob(name: string, payload: any, options: QueueOptions = {}): Promise<JobResult> {
         const defaultOptions = {
-            removeOnComplete: true,
-            removeOnFail: 50
+            removeOnComplete: {
+                age: 24 * 3600, // keep for 24 hours
+                count: 1000     // keep up to 1000 completed jobs
+            },
+            removeOnFail: {
+                age: 7 * 24 * 3600, // keep for 7 days
+                count: 5000         // keep up to 5000 failed jobs
+            }
         };
         
         const job = await this.queue.add(name, payload, { ...defaultOptions, ...options });
