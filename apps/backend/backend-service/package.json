@@ -2,12 +2,11 @@
     "name": "backend-service",
     "version": "1.0.0",
     "description": "Backend service for managing jobs via BullMQ and WebSockets",
-    "main": "dist/server.js",
+    "main": "dist/index.js",
     "scripts": {
         "build": "tsc",
-        "start": "node dist/server.js",
-        "dev": "tsc && node dist/server.js",
-        "watch": "tsc -w & nodemon dist/server.js"
+        "dev": "ts-node src/index.ts",
+        "start": "npm run build && node dist/index.js"
     },
     "keywords": [],
     "author": "",

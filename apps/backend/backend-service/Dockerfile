@@ -44,5 +44,5 @@ ENV PORT=3000
 # REDIS_HOST and REDIS_PORT will be set by docker-compose
 
 # Command to run the application
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/index.js"]
 

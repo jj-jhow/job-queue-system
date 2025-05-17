@@ -4,10 +4,9 @@
   "description": "A job queue worker service using BullMQ and Redis.",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "ts-node src/index.ts",
-    "start": "tsc && node dist/index.js",
     "build": "tsc",
-    "test": "echo \"No tests specified\" && exit 0"
+    "dev": "ts-node src/index.ts",
+    "start": "npm run build && node dist/index.js"
   },
   "dependencies": {
     "bullmq": "^1.0.0",

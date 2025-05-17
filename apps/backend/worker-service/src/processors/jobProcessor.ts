@@ -20,7 +20,7 @@ export async function processJob(job: Job): Promise<any> {
   
   await job.log(`Starting job processing for type: ${jobType}`);
   
-  // If job type requires a Python script
+  // If job type has a Python script
   if (JOB_SCRIPT_MAP[jobType]) {
     return await executePythonScript(job, jobType, payload);
   }
