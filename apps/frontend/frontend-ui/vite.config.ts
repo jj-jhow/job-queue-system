@@ -1,12 +1,17 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vite';
 
-export default defineConfig({
-  server: {
-    port: parseInt(process.env.PORT || '3200'),
-    host: process.env.HOST || 'localhost', // Listen on all addresses
-    open: false // Don't try to open a browser
-  },
-  build: {
-    outDir: 'dist',
-  }
+export default defineConfig(({ mode }) => {
+  const port = process.env.VITE_PORT ? parseInt(process.env.VITE_PORT, 10) : 5173;
+  const host = process.env.VITE_HOST || 'localhost';
+
+  return {
+    server: {
+      port: port,
+      host: host,
+      open: false,
+    },
+    build: {
+      outDir: 'dist',
+    },
+  };
 });
