@@ -44,7 +44,7 @@ export const redisOptions = {
         },
         removeOnFail: {
             age: 7 * 24 * 3600, // keep for 7 days
-            count: 5000         // keep up to 5000 failed jobs
+            count: 1000         // keep up to 5000 failed jobs
         }
     }
 };
