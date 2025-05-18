@@ -5,13 +5,13 @@ on:
   push:
     branches:
       - main # Trigger on direct push to main
-    # paths: # Optional: Only trigger if worker-service code changes
+    paths: # Optional: Only trigger if worker-service code changes
       - 'apps/backend/worker-service/**'
   pull_request:
     types: [closed] # Trigger when a PR is closed
     branches:
       - main # Only when the PR's target (base) branch is main
-    # paths: # Optional: Only trigger if worker-service code changes within the PR
+    paths: # Optional: Only trigger if worker-service code changes within the PR
       - 'apps/backend/worker-service/**'
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
       VM_HOST: ${{ secrets.AZURE_VM_IP }} # GitHub Secret
       VM_USER: ${{ secrets.AZURE_VM_USER }} # GitHub Secret
       # Define paths on the VM
-      REMOTE_APP_PATH: /home/${{ secrets.AZURE_VM_USER }}/your-project-directory/worker-service
+      REMOTE_APP_PATH: /home/${{ secrets.AZURE_VM_USER }}/worker-service
       # Define path to worker service within the checkout
       WORKER_SERVICE_PATH: ./apps/backend/worker-service # Adjust if your repo structure is different
       # Accessing GitHub Variables (set at Repository or Environment level)
