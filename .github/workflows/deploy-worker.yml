@@ -23,10 +23,10 @@ jobs:
     # Define environment for this job if you are using Environment Secrets/Variables
     environment: development 
     env:
-      VM_HOST: ${{ secrets.AZURE_VM_IP }} # GitHub Secret
-      VM_USER: ${{ secrets.AZURE_VM_USER }} # GitHub Secret
+      VM_HOST: ${{ vars.AZURE_VM_IP }} # GitHub Secret
+      VM_USER: ${{ vars.AZURE_VM_USER }} # GitHub Secret
       # Define paths on the VM
-      REMOTE_APP_PATH: /home/${{ secrets.AZURE_VM_USER }}/worker-service
+      REMOTE_APP_PATH: /home/${{ vars.AZURE_VM_USER }}/worker-service
       # Define path to worker service within the checkout
       WORKER_SERVICE_PATH: ./apps/backend/worker-service # Adjust if your repo structure is different
       # Accessing GitHub Variables (set at Repository or Environment level)
@@ -60,7 +60,7 @@ jobs:
     - name: Setup SSH agent
       uses: webfactory/ssh-agent@v0.9.0
       with:
-        ssh-private-key: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }}
+        ssh-private-key: ${{ vars.AZURE_VM_SSH_PRIVATE_KEY }}
 
     - name: Copy application files to VM using scp
       # Using Windows PowerShell and native scp.exe
@@ -82,7 +82,7 @@ jobs:
       with:
         host: ${{ env.VM_HOST }}
         username: ${{ env.VM_USER }}
-        key: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }} # GitHub Secret
+        key: ${{ vars.AZURE_VM_SSH_PRIVATE_KEY }} # GitHub Secret
         port: 22 # Default SSH port
         script: |
           # Commands to be executed on the VM
