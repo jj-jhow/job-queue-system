@@ -57,49 +57,21 @@ jobs:
     #   run: npm test
     #   working-directory: ${{ env.WORKER_SERVICE_PATH }}
 
-    - name: Setup SSH agent
-      uses: webfactory/ssh-agent@v0.9.0
+    - name: Copy application files to VM
+      uses: appleboy/scp-action@v0.1.7
       with:
-        ssh-private-key: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }} # Ensure this is a secret
-
-    - name: Copy application files to VM using scp
-      shell: powershell
-      run: |
-        $sshKeyFileName = "id_rsa_temp_deploy_$(Get-Random)"
-        $sshKeyPath = Join-Path $env:RUNNER_TEMP $sshKeyFileName
-        
-        # Write the key to a temporary file. -NoNewline is critical.
-        Set-Content -Path $sshKeyPath -Value "${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }}" -NoNewline # Ensure this is a secret
-        
-        # Set restrictive permissions for the key file on Windows
-        # 1. Reset all permissions and remove inherited permissions
-        icacls $sshKeyPath /reset
-        icacls $sshKeyPath /inheritance:r 
-        # 2. Grant the current user (runner user) Full Control using their SID.
-        $currentUserSID = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-        icacls $sshKeyPath /grant "*$($currentUserSID):(F)"
-        Write-Host "Set permissions for user SID: $($currentUserSID) on $sshKeyPath"
-
-        Write-Host "Attempting to copy files using scp with key file: $sshKeyPath"
-        
-        # Use -i to specify the private key file. Added -v for verbose SSH output.
-        scp -v -i "$sshKeyPath" -o StrictHostKeyChecking=no -o UserKnownHostsFile=NUL -r `
-          "${{ env.WORKER_SERVICE_PATH }}/dist" `
-          "${{ env.WORKER_SERVICE_PATH }}/package.json" `
-          "${{ env.WORKER_SERVICE_PATH }}/package-lock.json" `
-          "${{ env.VM_USER }}@${{ env.VM_HOST }}:${{ env.REMOTE_APP_PATH }}/"
-        
-        $scpExitCode = $LASTEXITCODE
-        Write-Host "SCP command finished with exit code: $scpExitCode"
-        
-        # Remove the temporary key file immediately after use
-        Remove-Item -Path $sshKeyPath -Force -ErrorAction SilentlyContinue
-        
-        if ($scpExitCode -ne 0) {
-          Write-Error "SCP command failed with exit code $scpExitCode."
-          exit $scpExitCode # This ensures the GitHub Actions step fails
-        }
-        echo "Files copied successfully."
+        host: ${{ env.VM_HOST }}
+        username: ${{ env.VM_USER }}
+        key: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }}
+        port: 22 # Default SSH port
+        source: "${{ env.WORKER_SERVICE_PATH }}/dist,${{ env.WORKER_SERVICE_PATH }}/package.json,${{ env.WORKER_SERVICE_PATH }}/package-lock.json"
+        target: ${{ env.REMOTE_APP_PATH }}
+        # This will copy the 'dist' directory, 'package.json', and 'package-lock.json'
+        # into the REMOTE_APP_PATH on the VM.
+        # So you'll have:
+        # ${{ env.REMOTE_APP_PATH }}/dist
+        # ${{ env.REMOTE_APP_PATH }}/package.json
+        # ${{ env.REMOTE_APP_PATH }}/package-lock.json
 
     - name: Deploy application on VM
       uses: appleboy/ssh-action@v1.0.3
