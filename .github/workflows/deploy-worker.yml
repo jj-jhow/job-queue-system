@@ -1,0 +1,90 @@
+# .github/workflows/deploy-worker.yml (Conceptual)
+name: Deploy Worker to Azure VM
+
+on:
+  push:
+    branches:
+      - main # Or your deployment branch
+    paths: # Optional: Only trigger if worker-service code changes
+      - './apps/backend/worker-service/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted # Changed from ubuntu-latest
+    # Define environment for this job if you are using Environment Secrets/Variables
+    environment: development 
+    env:
+      VM_HOST: ${{ secrets.AZURE_VM_IP }} # GitHub Secret
+      VM_USER: ${{ secrets.AZURE_VM_USER }} # GitHub Secret
+      # Define paths on the VM
+      REMOTE_APP_PATH: /home/${{ secrets.AZURE_VM_USER }}/your-project-directory/worker-service
+      # Define path to worker service within the checkout
+      WORKER_SERVICE_PATH: ./apps/backend/worker-service # Adjust if your repo structure is different
+      # Accessing GitHub Variables (set at Repository or Environment level)
+      JOB_QUEUE_NAME_VAR: ${{ vars.JOB_QUEUE_NAME }}
+      REDIS_PORT_VAR: ${{ vars.REDIS_PORT }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x' # Match your application's Node.js version
+        cache: 'npm'
+        cache-dependency-path: ${{ env.WORKER_SERVICE_PATH }}/package-lock.json
+
+    - name: Install dependencies
+      run: npm install
+      working-directory: ${{ env.WORKER_SERVICE_PATH }}
+
+    - name: Build application
+      run: npm run build
+      working-directory: ${{ env.WORKER_SERVICE_PATH }}
+
+    # Optional: Add a testing step here
+    # - name: Run tests
+    #   run: npm test
+    #   working-directory: ${{ env.WORKER_SERVICE_PATH }}
+
+    - name: Copy application files to VM
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ env.VM_HOST }}
+        username: ${{ env.VM_USER }}
+        key: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }} # GitHub Secret
+        port: 22
+        source: "${{ env.WORKER_SERVICE_PATH }}/dist,${{ env.WORKER_SERVICE_PATH }}/package.json,${{ env.WORKER_SERVICE_PATH }}/package-lock.json"
+        target: "${{ env.REMOTE_APP_PATH }}"
+        # strip_components: 1 # Only if source is a single directory and you want its contents
+
+    - name: Deploy application on VM
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ env.VM_HOST }}
+        username: ${{ env.VM_USER }}
+        key: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }} # GitHub Secret
+        port: 22 # Default SSH port
+        script: |
+          # Commands to be executed on the VM
+          echo "Navigating to app directory..."
+          cd ${{ env.REMOTE_APP_PATH }}
+
+          # Files (dist, package.json, package-lock.json) are now copied by the previous scp step
+
+          echo "Installing production dependencies..."
+          # Create/overwrite .env file on the VM using secrets and variables
+          echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" > .env
+          echo "REDIS_PORT=${{ env.REDIS_PORT_VAR }}" >> .env # Using variable accessed via env context
+          echo "REDIS_PASSWORD=${{ secrets.REDIS_PRIMARY_KEY }}" >> .env # Using updated secret name
+          echo "JOB_QUEUE_NAME=${{ env.JOB_QUEUE_NAME_VAR }}" >> .env # Using variable accessed via env context
+          echo "NODE_ENV=production" >> .env
+
+          npm install --omit=dev # Install only production dependencies based on new package.json
+
+          echo "Restarting application with PM2..."
+          # Attempt to restart, if it fails (e.g., not running), then start it.
+          pm2 restart worker-app-01 || pm2 start dist/index.js --name worker-app-01
+
+          echo "Deployment complete!"
