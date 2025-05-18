@@ -42,7 +42,7 @@ services:
     build:
       context: ./apps/backend/worker-service
       dockerfile: Dockerfile
-container_name: jobqueue_worker-service
+    container_name: jobqueue_worker-service
     environment:
       - NODE_ENV=development
       - REDIS_HOST=redis
@@ -58,6 +58,24 @@ container_name: jobqueue_worker-service
     deploy:
       replicas: 1 # Default replica count (can be overridden with --scale)
 
+  # Python Worker Service
+  # python-worker:
+  #   build:
+  #     context: ./apps/backend/python-worker
+  #     dockerfile: Dockerfile
+  #   container_name: jobqueue_python_worker
+  #   environment:
+  #     - REDIS_HOST=redis
+  #     - REDIS_PORT=6379
+  #   depends_on:
+  #     - redis
+  #   networks:
+  #     - jobqueue_network
+  #   volumes:
+  #     - ./apps/backend/python-worker:/usr/src/app
+  #     - /usr/src/app/venv
+
+  # Frontend App
   frontend:
     build:
       context: ./apps/frontend/frontend-ui
