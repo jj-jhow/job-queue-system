@@ -60,7 +60,7 @@ jobs:
     - name: Setup SSH agent
       uses: webfactory/ssh-agent@v0.9.0
       with:
-        ssh-private-key: ${{ vars.AZURE_VM_SSH_PRIVATE_KEY }} # Corrected to use secrets context
+        ssh-private-key: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }} # Ensure this is a secret
 
     - name: Copy application files to VM using scp
       shell: powershell
@@ -69,21 +69,16 @@ jobs:
         $sshKeyPath = Join-Path $env:RUNNER_TEMP $sshKeyFileName
         
         # Write the key to a temporary file. -NoNewline is critical.
-        Set-Content -Path $sshKeyPath -Value "${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }}" -NoNewline # Corrected to use secrets context
+        Set-Content -Path $sshKeyPath -Value "${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }}" -NoNewline # Ensure this is a secret
         
         # Set restrictive permissions for the key file on Windows
         # 1. Reset all permissions and remove inherited permissions
         icacls $sshKeyPath /reset
         icacls $sshKeyPath /inheritance:r 
-        # 2. Grant the current user (runner user) Full Control.
-        #    Using $env:USERNAME should resolve to the runner's user account.
-        #    If $env:USERNAME doesn't include the domain, and it's a domain account,
-        #    you might need "$($env:USERDOMAIN)\$($env:USERNAME)"
-        icacls $sshKeyPath /grant "$($env:USERNAME):(F)"
-        # As an alternative for step 2, to be more specific if $env:USERNAME is problematic:
-        # $currentUserSID = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-        # icacls $sshKeyPath /grant "*$($currentUserSID):(F)"
-
+        # 2. Grant the current user (runner user) Full Control using their SID.
+        $currentUserSID = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+        icacls $sshKeyPath /grant "*$($currentUserSID):(F)"
+        Write-Host "Set permissions for user SID: $($currentUserSID) on $sshKeyPath"
 
         Write-Host "Attempting to copy files using scp with key file: $sshKeyPath"
         
@@ -111,7 +106,7 @@ jobs:
       with:
         host: ${{ env.VM_HOST }}
         username: ${{ env.VM_USER }}
-        key: ${{ vars.AZURE_VM_SSH_PRIVATE_KEY }} # Corrected to use secrets context
+        key: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }} # Ensure this is a secret
         port: 22 # Default SSH port
         script: |
           # Commands to be executed on the VM
