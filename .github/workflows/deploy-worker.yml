@@ -63,17 +63,18 @@ jobs:
         ssh-private-key: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }}
 
     - name: Copy application files to VM using scp
-      # Ensure scp is in the PATH on your Windows runner.
-      # It's included with Git for Windows and as an optional feature in modern Windows.
-      # The -o options are to avoid prompts for host key verification in CI.
-      # If your SSH port is not 22, add -P <port_number> to the scp command.
-      shell: bash # Using bash for scp, common with Git for Windows
+      # Using PowerShell and native scp.exe
+      # Ensure scp.exe (OpenSSH Client feature in Windows) is in the PATH.
+      # -o StrictHostKeyChecking=no: Avoids interactive prompts.
+      # -o UserKnownHostsFile=NUL: NUL is the Windows equivalent of /dev/null.
+      # PowerShell uses backtick (`) for line continuation.
+      shell: pwsh
       run: |
-        scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r \
-          "${{ env.WORKER_SERVICE_PATH }}/dist" \
-          "${{ env.WORKER_SERVICE_PATH }}/package.json" \
-          "${{ env.WORKER_SERVICE_PATH }}/package-lock.json" \
-          ${{ env.VM_USER }}@${{ env.VM_HOST }}:${{ env.REMOTE_APP_PATH }}/
+        scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=NUL -r `
+          "${{ env.WORKER_SERVICE_PATH }}/dist" `
+          "${{ env.WORKER_SERVICE_PATH }}/package.json" `
+          "${{ env.WORKER_SERVICE_PATH }}/package-lock.json" `
+          "${{ env.VM_USER }}@${{ env.VM_HOST }}:${{ env.REMOTE_APP_PATH }}/"
         echo "Files copied successfully"
 
     - name: Deploy application on VM
