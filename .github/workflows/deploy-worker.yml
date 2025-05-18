@@ -4,12 +4,21 @@ name: Deploy Worker to Azure VM
 on:
   push:
     branches:
-      - main # Or your deployment branch
+      - main # Trigger on direct push to main
     paths: # Optional: Only trigger if worker-service code changes
+      - './apps/backend/worker-service/**'
+  pull_request:
+    types: [closed] # Trigger when a PR is closed
+    branches:
+      - main # Only when the PR's target (base) branch is main
+    paths: # Optional: Only trigger if worker-service code changes within the PR
       - './apps/backend/worker-service/**'
 
 jobs:
   build-and-deploy:
+    # This condition ensures the job runs for direct pushes to main
+    # OR when a PR to main is merged.
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true)
     runs-on: self-hosted # Changed from ubuntu-latest
     # Define environment for this job if you are using Environment Secrets/Variables
     environment: development 
