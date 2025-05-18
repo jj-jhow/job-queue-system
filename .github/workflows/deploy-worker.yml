@@ -60,22 +60,39 @@ jobs:
     - name: Setup SSH agent
       uses: webfactory/ssh-agent@v0.9.0
       with:
-        ssh-private-key: ${{ vars.AZURE_VM_SSH_PRIVATE_KEY }}
+        ssh-private-key: ${{ vars.AZURE_VM_SSH_PRIVATE_KEY }} # This is for other steps or if scp could use it
 
     - name: Copy application files to VM using scp
-      # Using Windows PowerShell and native scp.exe
-      # Ensure scp.exe (OpenSSH Client feature in Windows) is in the PATH.
-      # -o StrictHostKeyChecking=no: Avoids interactive prompts.
-      # -o UserKnownHostsFile=NUL: NUL is the Windows equivalent of /dev/null.
-      # PowerShell uses backtick (`) for line continuation.
       shell: powershell
       run: |
-        scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=NUL -r `
+        $sshKeyFileName = "id_rsa_temp_deploy_$(Get-Random)"
+        $sshKeyPath = Join-Path $env:RUNNER_TEMP $sshKeyFileName
+        
+        # Write the key to a temporary file. -NoNewline is critical.
+        Set-Content -Path $sshKeyPath -Value "${{ vars.AZURE_VM_SSH_PRIVATE_KEY }}" -NoNewline
+        
+        Write-Host "Attempting to copy files using scp with key file: $sshKeyPath"
+        # For debugging, you can temporarily print the first few characters of the key file
+        # Get-Content $sshKeyPath -TotalCount 1 | ForEach-Object { Write-Host "Key file starts with: $_" }
+        
+        # Use -i to specify the private key file. Added -v for verbose SSH output.
+        scp -v -i "$sshKeyPath" -o StrictHostKeyChecking=no -o UserKnownHostsFile=NUL -r `
           "${{ env.WORKER_SERVICE_PATH }}/dist" `
           "${{ env.WORKER_SERVICE_PATH }}/package.json" `
           "${{ env.WORKER_SERVICE_PATH }}/package-lock.json" `
           "${{ env.VM_USER }}@${{ env.VM_HOST }}:${{ env.REMOTE_APP_PATH }}/"
-        echo "Files copied successfully"
+        
+        $scpExitCode = $LASTEXITCODE
+        Write-Host "SCP command finished with exit code: $scpExitCode"
+        
+        # Remove the temporary key file immediately after use
+        Remove-Item -Path $sshKeyPath -Force -ErrorAction SilentlyContinue
+        
+        if ($scpExitCode -ne 0) {
+          Write-Error "SCP command failed with exit code $scpExitCode."
+          exit $scpExitCode # This ensures the GitHub Actions step fails
+        }
+        echo "Files copied successfully." # This line will only be reached if scp succeeds
 
     - name: Deploy application on VM
       uses: appleboy/ssh-action@v1.0.3
