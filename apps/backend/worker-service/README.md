@@ -36,10 +36,11 @@ worker-service
 
 ## Configuration
 
-The application uses environment variables for configuration. You can set the following variables:
+The application uses environment variables for configuration. You can ignore these to set everything to the default:
 
 - `REDIS_HOST`: The host of the Redis server (default: `localhost`).
 - `REDIS_PORT`: The port of the Redis server (default: `6379`).
+- `REDIS_PRIMARY_KEY`: The primary key needed to access redis.
 - `JOB_QUEUE_NAME`: The name of the job queue (default: `local-job-queue`).
 
 ## Usage
