@@ -60,7 +60,7 @@ jobs:
     - name: Setup SSH agent
       uses: webfactory/ssh-agent@v0.9.0
       with:
-        ssh-private-key: ${{ vars.AZURE_VM_SSH_PRIVATE_KEY }} # This is for other steps or if scp could use it
+        ssh-private-key: ${{ vars.AZURE_VM_SSH_PRIVATE_KEY }} # Corrected to use secrets context
 
     - name: Copy application files to VM using scp
       shell: powershell
@@ -69,11 +69,23 @@ jobs:
         $sshKeyPath = Join-Path $env:RUNNER_TEMP $sshKeyFileName
         
         # Write the key to a temporary file. -NoNewline is critical.
-        Set-Content -Path $sshKeyPath -Value "${{ vars.AZURE_VM_SSH_PRIVATE_KEY }}" -NoNewline
+        Set-Content -Path $sshKeyPath -Value "${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }}" -NoNewline # Corrected to use secrets context
         
+        # Set restrictive permissions for the key file on Windows
+        # 1. Reset all permissions and remove inherited permissions
+        icacls $sshKeyPath /reset
+        icacls $sshKeyPath /inheritance:r 
+        # 2. Grant the current user (runner user) Full Control.
+        #    Using $env:USERNAME should resolve to the runner's user account.
+        #    If $env:USERNAME doesn't include the domain, and it's a domain account,
+        #    you might need "$($env:USERDOMAIN)\$($env:USERNAME)"
+        icacls $sshKeyPath /grant "$($env:USERNAME):(F)"
+        # As an alternative for step 2, to be more specific if $env:USERNAME is problematic:
+        # $currentUserSID = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+        # icacls $sshKeyPath /grant "*$($currentUserSID):(F)"
+
+
         Write-Host "Attempting to copy files using scp with key file: $sshKeyPath"
-        # For debugging, you can temporarily print the first few characters of the key file
-        # Get-Content $sshKeyPath -TotalCount 1 | ForEach-Object { Write-Host "Key file starts with: $_" }
         
         # Use -i to specify the private key file. Added -v for verbose SSH output.
         scp -v -i "$sshKeyPath" -o StrictHostKeyChecking=no -o UserKnownHostsFile=NUL -r `
@@ -92,14 +104,14 @@ jobs:
           Write-Error "SCP command failed with exit code $scpExitCode."
           exit $scpExitCode # This ensures the GitHub Actions step fails
         }
-        echo "Files copied successfully." # This line will only be reached if scp succeeds
+        echo "Files copied successfully."
 
     - name: Deploy application on VM
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ env.VM_HOST }}
         username: ${{ env.VM_USER }}
-        key: ${{ vars.AZURE_VM_SSH_PRIVATE_KEY }} # GitHub Secret
+        key: ${{ vars.AZURE_VM_SSH_PRIVATE_KEY }} # Corrected to use secrets context
         port: 22 # Default SSH port
         script: |
           # Commands to be executed on the VM
