@@ -10,7 +10,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted # Changed from ubuntu-latest
     # Define environment for this job if you are using Environment Secrets/Variables
     environment: development 
     env:
