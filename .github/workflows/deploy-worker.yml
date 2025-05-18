@@ -6,13 +6,13 @@ on:
     branches:
       - main # Trigger on direct push to main
     # paths: # Optional: Only trigger if worker-service code changes
-      # - './apps/backend/worker-service/**'
+      - 'apps/backend/worker-service/**'
   pull_request:
     types: [closed] # Trigger when a PR is closed
     branches:
       - main # Only when the PR's target (base) branch is main
     # paths: # Optional: Only trigger if worker-service code changes within the PR
-      # - './apps/backend/worker-service/**'
+      - 'apps/backend/worker-service/**'
 
 jobs:
   build-and-deploy:
@@ -57,16 +57,24 @@ jobs:
     #   run: npm test
     #   working-directory: ${{ env.WORKER_SERVICE_PATH }}
 
-    - name: Copy application files to VM
-      uses: appleboy/scp-action@v0.1.7
+    - name: Setup SSH agent
+      uses: webfactory/ssh-agent@v0.9.0
       with:
-        host: ${{ env.VM_HOST }}
-        username: ${{ env.VM_USER }}
-        key: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }} # GitHub Secret
-        port: 22
-        source: "${{ env.WORKER_SERVICE_PATH }}/dist,${{ env.WORKER_SERVICE_PATH }}/package.json,${{ env.WORKER_SERVICE_PATH }}/package-lock.json"
-        target: "${{ env.REMOTE_APP_PATH }}"
-        # strip_components: 1 # Only if source is a single directory and you want its contents
+        ssh-private-key: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }}
+
+    - name: Copy application files to VM using scp
+      # Ensure scp is in the PATH on your Windows runner.
+      # It's included with Git for Windows and as an optional feature in modern Windows.
+      # The -o options are to avoid prompts for host key verification in CI.
+      # If your SSH port is not 22, add -P <port_number> to the scp command.
+      shell: bash # Using bash for scp, common with Git for Windows
+      run: |
+        scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r \
+          "${{ env.WORKER_SERVICE_PATH }}/dist" \
+          "${{ env.WORKER_SERVICE_PATH }}/package.json" \
+          "${{ env.WORKER_SERVICE_PATH }}/package-lock.json" \
+          ${{ env.VM_USER }}@${{ env.VM_HOST }}:${{ env.REMOTE_APP_PATH }}/
+        echo "Files copied successfully"
 
     - name: Deploy application on VM
       uses: appleboy/ssh-action@v1.0.3
