@@ -5,14 +5,14 @@ on:
   push:
     branches:
       - main # Trigger on direct push to main
-    paths: # Optional: Only trigger if worker-service code changes
-      - './apps/backend/worker-service/**'
+    # paths: # Optional: Only trigger if worker-service code changes
+      # - './apps/backend/worker-service/**'
   pull_request:
     types: [closed] # Trigger when a PR is closed
     branches:
       - main # Only when the PR's target (base) branch is main
-    paths: # Optional: Only trigger if worker-service code changes within the PR
-      - './apps/backend/worker-service/**'
+    # paths: # Optional: Only trigger if worker-service code changes within the PR
+      # - './apps/backend/worker-service/**'
 
 jobs:
   build-and-deploy:
