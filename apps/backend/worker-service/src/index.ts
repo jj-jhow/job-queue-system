@@ -5,7 +5,6 @@ import { gracefulShutdown } from './utils/shutdownHandler';
 
 console.log(`Initializing worker for queue: ${JOB_QUEUE_NAME}`);
 
-// Create a new BullMQ worker instance
 const worker = new Worker(
     JOB_QUEUE_NAME,
     processJob,
