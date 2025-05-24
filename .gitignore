@@ -5,6 +5,12 @@ yarn-error.log
 *.log
 *.tsbuildinfo
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv
+
 # Build output
 dist/
 build/
@@ -27,4 +33,5 @@ Thumbs.db
 coverage/
 
 # Miscellaneous
+vms/
 *.pem
