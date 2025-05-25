@@ -1,8 +1,8 @@
-import bpy
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, BoolProperty, FloatProperty
 from bpy.types import Operator
-from ..logic import import_logic # Import from the logic subpackage
+
+from ..logic import import_usd_logic # Import from the logic subpackage
 
 class ImportUSDOperator(Operator, ImportHelper):
     """Import a USD file using Blender's built-in USD importer"""
@@ -25,7 +25,7 @@ class ImportUSDOperator(Operator, ImportHelper):
     scale: FloatProperty(name="Scale", default=1.0, min=0.0001, soft_max=1000.0)
 
     def execute(self, context):
-        success, message = import_logic.import_usd_file(
+        success, message = import_usd_logic.import_usd_file(
             filepath=self.filepath,
             import_cameras=self.import_cameras,
             import_curves=self.import_curves,

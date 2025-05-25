@@ -1,8 +1,8 @@
-import bpy
 from bpy_extras.io_utils import ExportHelper
-from bpy.props import StringProperty, BoolProperty, FloatProperty, EnumProperty
+from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
-from ..logic import export_logic # Import from the logic subpackage
+
+from ..logic import export_usd_logic # Import from the logic subpackage
 
 class ExportUSDOperator(Operator, ExportHelper):
     """Export the selection or scene to a USD file"""
@@ -32,7 +32,7 @@ class ExportUSDOperator(Operator, ExportHelper):
     )
 
     def execute(self, context):
-        success, message = export_logic.export_usd_file(
+        success, message = export_usd_logic.export_usd_file(
             filepath=self.filepath,
             filename_ext=self.filename_ext, # Pass the default extension
             selected_objects_only=self.selected_objects_only,

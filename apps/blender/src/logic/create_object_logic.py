@@ -1,6 +1,10 @@
 import bpy
+from typing import Literal
 
-def create_primitive_object(object_type, location):
+from collections.abc import Sequence
+from mathutils import Vector
+
+def create_primitive_object(location: Sequence[float] | Vector | None, object_type: Literal["CUBE", "SPHERE", "PLANE", "CYLINDER"] | None = "CUBE"):
     """
     Creates a primitive mesh object.
     Returns a tuple (success_boolean, message_string).
