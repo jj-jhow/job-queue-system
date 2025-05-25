@@ -3,9 +3,9 @@ schema_version = "1.0.0"
 # Example of manifest file for a Blender extension
 # Change the values according to your extension
 id = "toolkit"
-version = "1.0.0"
+version = "0.1.0"
 name = "Toolkit"
-tagline = "This is another extension"
+tagline = "Process USD assets and convert to GLB"
 maintainer = "Jonathan Madeira"
 # Supported types: "add-on", "theme"
 type = "add-on"

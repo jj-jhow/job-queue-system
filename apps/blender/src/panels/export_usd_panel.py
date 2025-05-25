@@ -1,6 +1,6 @@
 from bpy.types import Panel
 
-from ..operators.export_usd_operator import ExportUSDOperator
+from ..operators import ExportUSDOperator
 
 class ExportUSDPanel(Panel):
     """Creates a Panel in the Object properties window"""
