@@ -1,8 +1,8 @@
-import bpy
-from typing import Literal
+from bpy.ops.mesh import primitive_cube_add, primitive_uv_sphere_add, primitive_plane_add, primitive_cylinder_add
 
 from collections.abc import Sequence
 from mathutils import Vector
+from typing import Literal
 
 def create_primitive_object(location: Sequence[float] | Vector | None, object_type: Literal["CUBE", "SPHERE", "PLANE", "CYLINDER"] | None = "CUBE"):
     """
@@ -11,13 +11,13 @@ def create_primitive_object(location: Sequence[float] | Vector | None, object_ty
     """
     try:
         if object_type == 'CUBE':
-            bpy.ops.mesh.primitive_cube_add(size=2, enter_editmode=False, align='WORLD', location=location)
+            primitive_cube_add(size=2, enter_editmode=False, align='WORLD', location=location)
         elif object_type == 'SPHERE':
-            bpy.ops.mesh.primitive_uv_sphere_add(radius=1, enter_editmode=False, align='WORLD', location=location)
+            primitive_uv_sphere_add(radius=1, enter_editmode=False, align='WORLD', location=location)
         elif object_type == 'PLANE':
-            bpy.ops.mesh.primitive_plane_add(size=2, enter_editmode=False, align='WORLD', location=location)
+            primitive_plane_add(size=2, enter_editmode=False, align='WORLD', location=location)
         elif object_type == 'CYLINDER':
-            bpy.ops.mesh.primitive_cylinder_add(radius=1, depth=2, enter_editmode=False, align='WORLD', location=location)
+            primitive_cylinder_add(radius=1, depth=2, enter_editmode=False, align='WORLD', location=location)
         else:
             return False, f"Unknown object type: {object_type}"
         

@@ -1,4 +1,4 @@
-import bpy
+from bpy.ops.wm import usd_export
 
 def export_usd_file(filepath, filename_ext, selected_objects_only, visible_objects_only, export_animation, export_hair, export_uvmaps, export_normals, export_materials, use_instancing, evaluation_mode):
     """
@@ -13,7 +13,7 @@ def export_usd_file(filepath, filename_ext, selected_objects_only, visible_objec
         filepath += filename_ext
     
     try:
-        bpy.ops.wm.usd_export(
+        usd_export(
             filepath=filepath,
             selected_objects_only=selected_objects_only,
             visible_objects_only=visible_objects_only,
