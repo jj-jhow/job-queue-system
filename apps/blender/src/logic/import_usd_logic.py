@@ -1,4 +1,4 @@
-from bpy.ops.wm import usd_import
+from bpy.ops import wm
 
 def import_usd_file(filepath, import_cameras, import_curves, import_lights, import_materials, import_meshes, scale):
     """
@@ -9,7 +9,7 @@ def import_usd_file(filepath, import_cameras, import_curves, import_lights, impo
         return False, "No file selected for USD import."
 
     try:
-        usd_import(
+        wm.usd_import(
             filepath=filepath,
             import_cameras=import_cameras,
             import_curves=import_curves,
