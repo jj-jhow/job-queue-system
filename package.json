@@ -4,13 +4,17 @@
   "description": "Distributed job queue system with asset pipeline",
   "useWorkspaces": true,
   "scripts": {
-    "start:all": "concurrently \"npm run start:backend\" \"npm run start:worker\" \"npm run start:frontend\"",
+    "start:all": "concurrently \"npm run start:backend\" \"npm run start:worker\" \"npm run start:sora\" \"npm run start:riku\" \"npm run start:frontend\"",
     "start:backend": "npm --prefix apps/backend/backend-service start",
     "start:worker": "npm --prefix apps/backend/worker-service start",
+    "start:sora": "npm --prefix apps/backend/sora start",
+    "start:riku": "npm --prefix apps/backend/riku start",
     "start:frontend": "npm --prefix apps/frontend/frontend-ui start",
-    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:worker\" \"npm run dev:frontend\"",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:worker\" \"npm run dev:sora\" \"npm run dev:riku\" \"npm run dev:frontend\"",
     "dev:backend": "npm --prefix apps/backend/backend-service run dev",
     "dev:worker": "npm --prefix apps/backend/worker-service run dev",
+    "dev:sora": "npm --prefix apps/backend/sora run dev",
+    "dev:riku": "npm --prefix apps/backend/riku run dev",
     "dev:frontend": "npm --prefix apps/frontend/frontend-ui run dev",
     "clean:all": "lerna clean",
     "build:all": "lerna run build"
@@ -27,16 +31,15 @@
     "typescript",
     "python"
   ],
-  "author": "Your Name",
+  "author": "Jonathan Madeira",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2",
     "lerna": "^7.4.2"
   },
   "workspaces": [
-    "apps/backend/backend-service",
-    "apps/backend/worker-service",
-    "apps/frontend/frontend-ui"
+    "apps/backend/*",
+    "apps/frontend/*"
   ],
   "engines": {
     "node": ">=16.0.0",
