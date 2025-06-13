@@ -2,11 +2,11 @@
   "name": "riku",
   "version": "1.0.0",
   "description": "A 3d asset pipeline worker service for gpu bound processing of assets from a queue.",
-  "main": "src/index.ts",
+  "main": "dist/main.js",
   "scripts": {
     "build": "tsc",
     "dev": "ts-node-dev src/index.ts",
-    "start": "ts-node src/index.ts"
+    "start": "ts-node dist/index.js"
   },
   "keywords": [
     "riku",
