@@ -47,5 +47,7 @@
     "node": ">=16.0.0",
     "npm": ">=8.0.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "bullmq": "^5.55.0"
+  }
 }

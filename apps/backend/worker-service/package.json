@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@dotenvx/dotenvx": "^1.44.0",
-    "bullmq": "^1.0.0",
     "redis": "^3.0.0"
   },
   "devDependencies": {
