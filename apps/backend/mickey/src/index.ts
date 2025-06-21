@@ -1,4 +1,3 @@
-import { QueueScheduler } from 'bullmq';
 import { CPU_PROCESSOR_QUEUE_NAME, GPU_PROCESSOR_QUEUE_NAME, MICKEY_INPUT_QUEUE_NAME, REDIS_HOST, REDIS_PORT } from './config/config';
 import { redisConnection } from './services/redis';
 import { cpuProcessorQueue } from './queues/cpu-queue';
@@ -12,11 +11,6 @@ import { orchestratorWorker } from './workers/orchestrator';
 
 redisConnection.on('connect', () => console.log(`Mickey connected to Redis at ${REDIS_HOST}:${REDIS_PORT}.`));
 redisConnection.on('error', (err) => console.error('Mickey Redis connection error:', err));
-
-// --- Queue Schedulers (Required for delayed jobs, retries etc, good practice to have) ---
-// One scheduler per queue that Mickey interacts with as a worker or producer if advanced features are used.
-// For Mickey's worker queue:
-new QueueScheduler(MICKEY_INPUT_QUEUE_NAME, { connection: redisConnection });
 
 // --- Mickey's Worker ---
 const mickeyWorker = orchestratorWorker;

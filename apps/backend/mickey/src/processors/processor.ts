@@ -1,21 +1,39 @@
 import { Job } from "bullmq";
 import { OrchestratorJobData, WorkerJobData, WorkFlowStep } from "../models/job";
-import { CPU_PROCESSOR_QUEUE_NAME, GPU_PROCESSOR_QUEUE_NAME } from "../config/config";
 import { cpuProcessorQueue } from "../queues/cpu-queue";
 import { gpuProcessorQueue } from "../queues/gpu-queue";
 import { findWorkFlowStepByName } from "../utils/work-flow-step";
 import { INITIAL_WORKFLOW_STEP } from "../models/work-flow-step";
+import { setJobProgress, appendJobLog, clearJobProgressAndLogs } from "../services/redis";
 
 export const processor = async (job: Job<OrchestratorJobData>) => {
     const { assetId, payload, completedStep, currentStep } = job.data;
     const logPrefix = `[Job ${job.id} | Asset ${assetId}]`;
-    console.log(`${logPrefix} Received. Data:`, JSON.stringify(job.data));
+    const jobId = job.id?.toString() || assetId;
+    // Progress mapping: import=0-25, tag=25-50, decimate=50-75, export=75-100
+    const stepProgressMap: Record<string, [number, number]> = {
+        import: [0, 25],
+        tag: [25, 50],
+        decimate: [50, 75],
+        export: [75, 100],
+    };
+    // On new job, clear previous progress/logs
+    if (!completedStep && !currentStep) {
+        await clearJobProgressAndLogs(jobId);
+        await setJobProgress(jobId, 0);
+        await appendJobLog(jobId, `${logPrefix} Job started.`);
+    }
 
     let currentProcessingWfStep: WorkFlowStep | null = null;
     let dataForNextStep = payload;
 
     if (completedStep) {
         console.log(`${logPrefix} Step '${completedStep}' reported as completed.`);
+        await appendJobLog(jobId, `${logPrefix} Step '${completedStep}' completed.`);
+        // Set progress to end of completed step
+        const [start, end] = stepProgressMap[completedStep] || [0, 0];
+        await setJobProgress(jobId, end);
+
         const completedWfStepNode = findWorkFlowStepByName(completedStep);
 
         if (!completedWfStepNode) {
@@ -53,6 +71,11 @@ export const processor = async (job: Job<OrchestratorJobData>) => {
         throw new Error("Could not determine current processing step for the workflow.");
     }
 
+    // Set progress to start of new step
+    const [stepStart] = stepProgressMap[currentProcessingWfStep.name] || [0, 0];
+    await setJobProgress(jobId, stepStart);
+    await appendJobLog(jobId, `${logPrefix} Routing to step '${currentProcessingWfStep.name}'.`);
+
     const jobDataForWorker: WorkerJobData = {
         assetId,
         currentStep: currentProcessingWfStep.name,
@@ -64,10 +87,10 @@ export const processor = async (job: Job<OrchestratorJobData>) => {
 
     if (currentProcessingWfStep.type === 'cpu') {
         await cpuProcessorQueue.add(workerJobName, jobDataForWorker);
-        console.log(`${logPrefix} Sent to CPU queue ('${CPU_PROCESSOR_QUEUE_NAME}') for step '${currentProcessingWfStep.name}'.`);
+        await appendJobLog(jobId, `${logPrefix} Sent to CPU queue for step '${currentProcessingWfStep.name}'.`);
     } else if (currentProcessingWfStep.type === 'gpu') {
         await gpuProcessorQueue.add(workerJobName, jobDataForWorker);
-        console.log(`${logPrefix} Sent to GPU queue ('${GPU_PROCESSOR_QUEUE_NAME}') for step '${currentProcessingWfStep.name}'.`);
+        await appendJobLog(jobId, `${logPrefix} Sent to GPU queue for step '${currentProcessingWfStep.name}'.`);
     } else {
         // Should be unreachable with TypeScript checking WorkFlowStep.type
         const exhaustiveCheck: never = currentProcessingWfStep.type;
