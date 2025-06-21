@@ -1,0 +1,25 @@
+{
+    "name": "@job-queue-system/shared",
+    "version": "1.0.0",
+    "description": "Shared utilities and types for the job queue system.",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "lint": "eslint . --ext .ts,.js",
+        "test": "jest"
+    },
+    "keywords": [
+        "job-queue",
+        "shared",
+        "utilities"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {},
+    "devDependencies": {
+        "typescript": "^5.0.0",
+        "eslint": "^8.0.0",
+        "jest": "^29.0.0"
+    }
+}

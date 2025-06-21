@@ -4,7 +4,7 @@
   "description": "Distributed job queue system with asset pipeline",
   "useWorkspaces": true,
   "scripts": {
-    "start:all": "concurrently \"npm run start:backend\" \"npm run start:worker\" \"npm run start:mickey\" \"npm run start:sora\" \"npm run start:riku\" \"npm run start:frontend\"",
+    "start:all": "concurrently \"npm run start:backend\" \"npm run start:mickey\" \"npm run start:sora\" \"npm run start:frontend\"",
     "start:backend": "npm --prefix apps/backend/backend-service start",
     "start:worker": "npm --prefix apps/backend/worker-service start",
     "start:mickey": "npm --prefix apps/backend/mickey start",
@@ -41,7 +41,8 @@
   },
   "workspaces": [
     "apps/backend/*",
-    "apps/frontend/*"
+    "apps/frontend/*",
+    "packages/shared/*"
   ],
   "engines": {
     "node": ">=16.0.0",
