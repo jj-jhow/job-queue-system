@@ -1,5 +1,5 @@
 import IORedis from 'ioredis';
-import { REDIS_HOST, REDIS_PASSWORD, REDIS_PORT } from '../config/config';
+import { REDIS_HOST, REDIS_PASSWORD, REDIS_PORT } from "@job-queue-system/shared";
 
 // --- Redis Connection ---
 // BullMQ uses ioredis. Ensure ioredis is installed (npm install ioredis)

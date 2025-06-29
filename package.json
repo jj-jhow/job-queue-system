@@ -11,7 +11,7 @@
     "start:sora": "npm --prefix apps/backend/sora start",
     "start:riku": "npm --prefix apps/backend/riku start",
     "start:frontend": "npm --prefix apps/frontend/frontend-ui start",
-    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:worker\" \"npm run dev:mickey\" \"npm run dev:sora\" \"npm run dev:riku\" \"npm run dev:frontend\"",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:mickey\" \"npm run dev:sora\" \"npm run dev:riku\" \"npm run dev:frontend\"",
     "dev:backend": "npm --prefix apps/backend/backend-service run dev",
     "dev:worker": "npm --prefix apps/backend/worker-service run dev",
     "dev:mickey": "npm --prefix apps/backend/mickey run dev",

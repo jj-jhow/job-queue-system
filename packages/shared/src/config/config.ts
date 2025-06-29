@@ -1,6 +1,57 @@
-export const REDIS_HOST = process.env.REDIS_HOST || '127.0.0.1';
-export const REDIS_PORT = parseInt(process.env.REDIS_PORT || '6379', 10);
-export const REDIS_PASSWORD = process.env.REDIS_PASSWORD || undefined;
+// --- Configuration ---
+import * as dotenv from '@dotenvx/dotenvx';
+// Load environment variables from .env file
+dotenv.config();
 
-export const CPU_PROCESSOR_QUEUE_NAME = process.env.CPU_PROCESSOR_QUEUE || 'cpu-processor';
-export const GPU_PROCESSOR_QUEUE_NAME = process.env.GPU_PROCESSOR_QUEUE || 'gpu-processor';
+// Helper to safely access process.env with a fallback
+const safeGetEnv = (key: string, defaultValue: string): string => {
+    return process.env[key] || defaultValue;
+};
+
+// Helper to safely access and parse an integer from process.env with a fallback
+const safeGetEnvInt = (key: string, defaultValue: number): number => {
+    const value = process.env[key];
+    return value ? parseInt(value, 10) : defaultValue;
+};
+
+// Helper to safely access process.env for potentially undefined values (like passwords)
+const safeGetEnvOptional = (key: string): string | undefined => {
+    return process.env[key] || undefined;
+};
+
+export const VITE_HOST = safeGetEnv('VITE_HOST', 'localhost');
+export const VITE_PORT = safeGetEnvInt('VITE_PORT', 80);
+
+export const BACKEND_SERVICE_PORT = safeGetEnvInt('BACKEND_SERVICE_PORT', 3000);
+export const REDIS_HOST = safeGetEnv('REDIS_HOST', 'localhost');
+export const REDIS_PORT = safeGetEnvInt('REDIS_PORT', 6379);
+export const REDIS_PASSWORD = safeGetEnvOptional('REDIS_PRIMARY_KEY');
+export const JOB_QUEUE_NAME = safeGetEnv('JOB_QUEUE_NAME', 'local-job-queue');
+
+export const ORCHESTRATOR_QUEUE_NAME = safeGetEnv('ORCHESTRATOR_QUEUE', 'asset-processor');
+export const CPU_PROCESSOR_QUEUE_NAME = safeGetEnv('CPU_PROCESSOR_QUEUE', 'cpu-processor');
+export const GPU_PROCESSOR_QUEUE_NAME = safeGetEnv('GPU_PROCESSOR_QUEUE', 'gpu-processor');
+
+// Redis options for BullMQ
+export const redisOptions = {
+    connection: {
+        host: REDIS_HOST,
+        port: REDIS_PORT,
+        password: REDIS_PASSWORD,
+        tls: REDIS_PASSWORD ? { rejectUnauthorized: false } : undefined,
+    },
+    limiter: {
+        max: 10,
+        duration: 1000
+    },
+    defaultJobOptions: {
+        removeOnComplete: {
+            age: 24 * 3600, // keep for 24 hours
+            count: 1000     // keep up to 1000 completed jobs
+        },
+        removeOnFail: {
+            age: 7 * 24 * 3600, // keep for 7 days
+            count: 5000         // keep up to 5000 failed jobs
+        }
+    }
+};

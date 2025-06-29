@@ -1,4 +1,4 @@
-import { CPU_PROCESSOR_QUEUE_NAME, GPU_PROCESSOR_QUEUE_NAME, MICKEY_INPUT_QUEUE_NAME, REDIS_HOST, REDIS_PORT } from './config/config';
+import { CPU_PROCESSOR_QUEUE_NAME, GPU_PROCESSOR_QUEUE_NAME, ORCHESTRATOR_QUEUE_NAME, REDIS_HOST, REDIS_PORT } from "@job-queue-system/shared";
 import { redisConnection } from './services/redis';
 import { cpuProcessorQueue } from './queues/cpu-queue';
 import { INITIAL_WORKFLOW_STEP } from './models/work-flow-step';
@@ -27,10 +27,9 @@ mickeyWorker.on('error', err => {
     console.error('Mickey worker encountered an error:', err);
 });
 
-console.log(`Mickey orchestrator started. Listening on queue: '${MICKEY_INPUT_QUEUE_NAME}'.`);
+console.log(`Mickey orchestrator started. Listening on queue: '${ORCHESTRATOR_QUEUE_NAME}'.`);
 console.log(`Will dispatch CPU jobs to: '${CPU_PROCESSOR_QUEUE_NAME}'.`);
 console.log(`Will dispatch GPU jobs to: '${GPU_PROCESSOR_QUEUE_NAME}'.`);
-console.log('Processing workflow:', getWorkFlowPath(INITIAL_WORKFLOW_STEP));
 
 
 // Graceful shutdown
@@ -57,7 +56,7 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 // --- Helper to add a test job (for development) ---
 // async function addTestJob(assetId: string, initialPayload: any, startStepName?: StepName) {
-//     const mickeyInputQueue = new Queue<MickeyInputJobData>(MICKEY_INPUT_QUEUE_NAME, { connection: redisConnection });
+//     const mickeyInputQueue = new Queue<MickeyInputJobData>(ORCHESTRATOR_QUEUE_NAME, { connection: redisConnection });
 //     const jobData: MickeyInputJobData = { assetId, payload: initialPayload };
 //     if (startStepName) {
 //         jobData.currentStep = startStepName;
