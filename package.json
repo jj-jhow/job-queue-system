@@ -19,7 +19,8 @@
     "dev:riku": "npm --prefix apps/backend/riku run dev",
     "dev:frontend": "npm --prefix apps/frontend/frontend-ui run dev",
     "clean:all": "lerna clean",
-    "build:all": "lerna run build"
+    "build:all": "lerna run build",
+    "build:backend": "npm --prefix apps/backend/backend-service run build"
   },
   "repository": {
     "type": "git",

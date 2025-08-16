@@ -1,5 +1,5 @@
 {
-    "name": "frontend-ui",
+    "name": "@job-queue-system/frontend-ui",
     "version": "1.0.0",
     "description": "Frontend UI for Job Queue System",
     "scripts": {

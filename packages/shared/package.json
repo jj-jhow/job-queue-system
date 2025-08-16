@@ -16,10 +16,13 @@
     ],
     "author": "",
     "license": "MIT",
-    "dependencies": {},
+    "dependencies": {
+        "@dotenvx/dotenvx": "^1.44.0",
+        "ioredis": "^5.7.0"
+    },
     "devDependencies": {
-        "typescript": "^5.0.0",
         "eslint": "^8.0.0",
-        "jest": "^29.0.0"
+        "jest": "^29.0.0",
+        "typescript": "^5.0.0"
     }
 }
