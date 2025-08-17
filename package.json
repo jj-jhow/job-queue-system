@@ -4,23 +4,28 @@
   "description": "Distributed job queue system with asset pipeline",
   "useWorkspaces": true,
   "scripts": {
-    "start:all": "concurrently \"npm run start:backend\" \"npm run start:mickey\" \"npm run start:sora\" \"npm run start:frontend\"",
-    "start:backend": "npm --prefix apps/backend/backend-service start",
-    "start:worker": "npm --prefix apps/backend/worker-service start",
-    "start:mickey": "npm --prefix apps/backend/mickey start",
-    "start:sora": "npm --prefix apps/backend/sora start",
-    "start:riku": "npm --prefix apps/backend/riku start",
-    "start:frontend": "npm --prefix apps/frontend/frontend-ui start",
-    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:mickey\" \"npm run dev:sora\" \"npm run dev:riku\" \"npm run dev:frontend\"",
+    "build": "turbo run build",
+    "build:backend": "turbo run build --filter=backend-service",
+    "build:frontend": "turbo run build --filter=frontend-ui",
+    "build:worker": "turbo run build --filter=worker-service",
+    "build:mickey": "turbo run build --filter=mickey",
+    "build:sora": "turbo run build --filter=sora",
+    "build:riku": "turbo run build --filter=riku",
+    "clean": "rimraf ./node_modules ./apps/**/node_modules ./packages/**/node_modules ./apps/frontend/**/node_modules ./apps/**/dist ./packages/**/dist",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:mickey\" \"npm run dev:sora\" \"npm run dev:riku\" \"npm run dev:frontend\"",
     "dev:backend": "npm --prefix apps/backend/backend-service run dev",
+    "dev:frontend": "npm --prefix apps/frontend/frontend-ui run dev",
     "dev:worker": "npm --prefix apps/backend/worker-service run dev",
     "dev:mickey": "npm --prefix apps/backend/mickey run dev",
     "dev:sora": "npm --prefix apps/backend/sora run dev",
     "dev:riku": "npm --prefix apps/backend/riku run dev",
-    "dev:frontend": "npm --prefix apps/frontend/frontend-ui run dev",
-    "clean:all": "lerna clean",
-    "build:all": "lerna run build",
-    "build:backend": "npm --prefix apps/backend/backend-service run build"
+    "start": "concurrently \"npm run start:backend\" \"npm run start:mickey\" \"npm run start:sora\" \"npm run start:frontend\"",
+    "start:backend": "npm --prefix apps/backend/backend-service start",
+    "start:frontend": "npm --prefix apps/frontend/frontend-ui start",
+    "start:worker": "npm --prefix apps/backend/worker-service start",
+    "start:mickey": "npm --prefix apps/backend/mickey start",
+    "start:sora": "npm --prefix apps/backend/sora start",
+    "start:riku": "npm --prefix apps/backend/riku start"
   },
   "repository": {
     "type": "git",
@@ -38,7 +43,7 @@
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2",
-    "lerna": "^7.4.2"
+    "turbo": "^1.13.0"
   },
   "workspaces": [
     "apps/backend/*",

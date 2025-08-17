@@ -1,4 +1,9 @@
 packages:
-  - apps/backend/*
-  - apps/frontend/*
-  - packages/*
+  - apps/backend/backend-service
+  - apps/frontend/frontend-ui
+  - packages/shared
+syncInjectedDepsAfterScripts:
+  - build
+  - build:backend
+  - build:frontend
+injectWorkspacePackages: true

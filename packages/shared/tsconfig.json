@@ -20,7 +20,7 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "allowSyntheticDefaultImports": true,
-        "composite": true // Needed for project references
+        "composite": false // Needed for project references
     },
     "include": [
         "src"
