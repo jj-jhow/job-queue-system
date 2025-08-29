@@ -9,17 +9,17 @@ async def handle_message(websocket):
     async for message in websocket:
         try:
             data = json.loads(message)
-            operator = data.get("operator")
+            command = data.get("command") or data.get("operator")
             params = data.get("params")
             response = {"status": "success"}
-            if operator == "create_object":
+            if command == "create_object":
                 print(f"creating object with params: {params}")
-            elif operator == "import_usd":
+            elif command == "import_usd":
                 print(f"importing usd with params: {params}")
-            elif operator == "export_usd":
+            elif command == "export_usd":
                 print(f"exporting usd with params: {params}")
             else:
-                response = {"status": "error", "message": "Unknown operator"}
+                response = {"status": "error", "message": "Unknown command"}
             await websocket.send(json.dumps(response))
         except Exception as e:
             error_response = {"status": "error", "message": str(e)}
