@@ -38,3 +38,7 @@ vms/
 
 # Turborepo
 .turbo/
+
+# Python Virtual Environment
+.
+venv/
