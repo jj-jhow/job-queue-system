@@ -112,13 +112,11 @@ def register():
     global websocket_server
     websocket_server = WebSocketServer(port=8080)
     websocket_server.start()
-    print("WebSocket server started on ws://localhost:8080")
 
 
 def unregister():
     global websocket_server
     if websocket_server:
-        print("Stopping WebSocket server...")
         websocket_server.stop()
         websocket_server = None
     print("WebSocket addon unregistered.")

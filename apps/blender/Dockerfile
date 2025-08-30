@@ -11,13 +11,15 @@ RUN /blender/4.5/python/bin/python3.11 -m pip install -r requirements.txt
 COPY . .
 
 # Build the addon
-RUN blender --command extension build --output-dir ./build
+RUN blender --command extension build --output-dir ./build --verbose
 
-FROM linuxserver/blender:latest AS runtime
+FROM ubuntu:22.04 AS runtime
 
-WORKDIR /app
+COPY --from=builder /blender /blender
 
-COPY --from=builder /app .
+RUN ln -s /blender/blender /usr/local/bin/blender
+RUN apt-get update && apt-get install -y \
+    libx11-6 libxrender1 libxfixes3 libxi6 libxkbcommon0 libsm6 libice6 libxext6 libgl1
 
 WORKDIR /app/build
 
