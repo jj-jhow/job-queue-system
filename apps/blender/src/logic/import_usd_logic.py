@@ -1,6 +1,15 @@
 from bpy.ops import wm
 
-def import_usd_file(filepath, import_cameras, import_curves, import_lights, import_materials, import_meshes, scale):
+
+def import_usd_file(
+    filepath,
+    import_cameras,
+    import_curves,
+    import_lights,
+    import_materials,
+    import_meshes,
+    scale,
+):
     """
     Imports a USD file using Blender's built-in USD importer.
     Returns a tuple (success_boolean, message_string).

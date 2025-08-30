@@ -1,14 +1,8 @@
 import bpy
 
-from .create_object_panel import CreateObjectPanel
-from .import_usd_panel import ImportUSDPanel
-from .export_usd_panel import ExportUSDPanel
+from .websocket_server import WebSocketServer
 
-classes = (
-    ImportUSDPanel,
-    CreateObjectPanel,
-    ExportUSDPanel,
-)
+classes = [WebSocketServer]
 
 __all__ = [cls for cls in classes]
 

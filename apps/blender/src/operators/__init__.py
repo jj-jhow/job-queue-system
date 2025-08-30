@@ -5,13 +5,12 @@ from .create_object_operator import CreateObjectOperator, OBJECT_TYPES_DEFINITIO
 from .export_usd_operator import ExportUSDOperator, EVALUATION_MODES
 
 
-classes = (
-    ImportUSDOperator,
-    CreateObjectOperator,
-    ExportUSDOperator
-)
+classes = (ImportUSDOperator, CreateObjectOperator, ExportUSDOperator)
 
-__all__ = [cls.__name__ for cls in classes] + [OBJECT_TYPES_DEFINITION, EVALUATION_MODES]
+__all__ = [cls.__name__ for cls in classes] + [
+    OBJECT_TYPES_DEFINITION,
+    EVALUATION_MODES,
+]
 
 
 def register():
