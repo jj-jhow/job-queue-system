@@ -3,6 +3,8 @@ import websockets
 import json
 import bpy
 import threading
+import signal
+import time
 
 websocket_server = None
 
@@ -123,4 +125,17 @@ def unregister():
 
 
 if __name__ == "__main__":
-    register()
+
+    def handle_signal(signum, frame):
+        print(f"\nReceived signal {signum}, shutting down.")
+        exit(0)
+
+    signal.signal(signal.SIGINT, handle_signal)
+    signal.signal(signal.SIGTERM, handle_signal)
+
+    print("Blender background process running. Press Ctrl+C or send SIGTERM to exit.")
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt received, exiting.")
