@@ -3,9 +3,15 @@ import bpy
 from .import_usd_operator import ImportUSDOperator
 from .create_object_operator import CreateObjectOperator, OBJECT_TYPES_DEFINITION
 from .export_usd_operator import ExportUSDOperator, EVALUATION_MODES
+from .clean_scene_operator import CleanSceneOperator
 
 
-classes = (ImportUSDOperator, CreateObjectOperator, ExportUSDOperator)
+classes = (
+    ImportUSDOperator,
+    CreateObjectOperator,
+    ExportUSDOperator,
+    CleanSceneOperator,
+)
 
 __all__ = [cls.__name__ for cls in classes] + [
     OBJECT_TYPES_DEFINITION,
