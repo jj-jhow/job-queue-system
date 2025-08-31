@@ -4,6 +4,7 @@ from .operators import (
     ExportUSDOperator,
     OBJECT_TYPES_DEFINITION,
     EVALUATION_MODES,
+    FILE_EXTENSIONS,
 )
 from .panels import ExportUSDPanel, CreateObjectPanel, ImportUSDPanel
 from .services import WebSocketServer
@@ -21,4 +22,5 @@ classes = (
 __all__ = [cls.__name__ for cls in classes] + [
     OBJECT_TYPES_DEFINITION,
     EVALUATION_MODES,
+    FILE_EXTENSIONS,
 ]

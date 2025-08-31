@@ -35,6 +35,7 @@ coverage/
 # Miscellaneous
 vms/
 *.pem
+tmp/
 
 # Turborepo
 .turbo/

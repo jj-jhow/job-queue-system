@@ -1,4 +1,4 @@
-from bpy.props import BoolProperty, FloatProperty
+from bpy.props import StringProperty, BoolProperty, FloatProperty
 from bpy.types import Operator, Scene
 from bpy_extras.io_utils import ImportHelper
 
@@ -13,6 +13,12 @@ class ImportUSDOperator(Operator, ImportHelper):
     bl_options = {"REGISTER", "UNDO"}
 
     filename_ext = ".usd;.usda;.usdc;.usdz"
+
+    filter_glob: StringProperty(
+        default="*.usd;*.usda;*.usdc;*.usdz",
+        options={"HIDDEN"},
+        maxlen=255,  # Max internal buffer length, longer would be clamped.
+    )
 
     def execute(self, context):
         success, message = import_usd_logic.import_usd_file(

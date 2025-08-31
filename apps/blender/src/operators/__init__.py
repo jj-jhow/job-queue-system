@@ -2,7 +2,7 @@ import bpy
 
 from .import_usd_operator import ImportUSDOperator
 from .create_object_operator import CreateObjectOperator, OBJECT_TYPES_DEFINITION
-from .export_usd_operator import ExportUSDOperator, EVALUATION_MODES
+from .export_usd_operator import ExportUSDOperator, EVALUATION_MODES, FILE_EXTENSIONS
 from .clean_scene_operator import CleanSceneOperator
 
 
@@ -16,6 +16,7 @@ classes = (
 __all__ = [cls.__name__ for cls in classes] + [
     OBJECT_TYPES_DEFINITION,
     EVALUATION_MODES,
+    FILE_EXTENSIONS,
 ]
 
 

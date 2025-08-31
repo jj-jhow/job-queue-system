@@ -1,5 +1,5 @@
 from bpy_extras.io_utils import ExportHelper
-from bpy.props import BoolProperty, EnumProperty
+from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator, Scene
 
 from ..logic import export_usd_logic
@@ -9,20 +9,33 @@ EVALUATION_MODES = (
     ("RENDER", "Render", "Use render evaluation mode"),
 )
 
+FILE_EXTENSIONS = (
+    (".usd", "USD", ""),
+    (".usda", "USDA", ""),
+    (".usdc", "USDC", ""),
+    (".usdz", "USDZ", ""),
+)
+
 
 class ExportUSDOperator(Operator, ExportHelper):
     """Export the selection or scene to a USD file"""
 
     bl_idname = "toolkit.export_usd"
-    bl_label = "Export USD (Toolkit)"
+    bl_label = "Export USD"
     bl_options = {"REGISTER", "UNDO"}
 
-    filename_ext = ".usdc"
+    filename_ext = ""
+
+    filter_glob: StringProperty(
+        default="*.usd;*.usda;*.usdc;*.usdz",
+        options={"HIDDEN"},
+        maxlen=255,  # Max internal buffer length, longer would be clamped.
+    )
 
     def execute(self, context):
         success, message = export_usd_logic.export_usd_file(
             filepath=self.filepath,
-            filename_ext=self.filename_ext,  # Pass the default extension
+            filename_ext=context.scene.export_usd_operator_filename_ext,
             selected_objects_only=context.scene.export_usd_operator_selected_objects_only,
             visible_objects_only=context.scene.export_usd_operator_visible_objects_only,
             export_animation=context.scene.export_usd_operator_export_animation,
@@ -57,6 +70,7 @@ class ExportUSDOperator(Operator, ExportHelper):
         layout.prop(scene, "export_usd_operator_export_materials")
         layout.prop(scene, "export_usd_operator_use_instancing")
         layout.prop(scene, "export_usd_operator_evaluation_mode")
+        layout.prop(scene, "export_usd_operator_filename_ext")
 
 
 def register():
@@ -89,6 +103,11 @@ def register():
         items=EVALUATION_MODES,
         default="VIEWPORT",
     )
+    Scene.export_usd_operator_filename_ext = EnumProperty(
+        name="File Extension",
+        items=FILE_EXTENSIONS,
+        default=".usd",
+    )
 
 
 def unregister():
@@ -101,3 +120,4 @@ def unregister():
     del Scene.export_usd_operator_export_materials
     del Scene.export_usd_operator_use_instancing
     del Scene.export_usd_operator_evaluation_mode
+    del Scene.export_usd_operator_filename_ext
