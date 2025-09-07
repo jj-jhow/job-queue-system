@@ -111,8 +111,16 @@ class MeshDecimator:
         decimated_mesh.compute_vertex_normals()
         return np.asarray(decimated_mesh.vertices), np.asarray(decimated_mesh.triangles)
 
-    def remap_attributes(self, orig_points, new_points, primvars_api, new_primvars_api):
-        """Remap and copy primvars from original to decimated mesh."""
+    def remap_attributes(
+        self,
+        orig_points,
+        new_points,
+        primvars_api,
+        new_primvars_api,
+        orig_triangles=None,
+        new_triangles=None,
+    ):
+        """Remap and copy primvars from original to decimated mesh, including face-varying."""
         # Remove all existing primvars from the new mesh (should be none, but safe)
         for pvar in new_primvars_api.GetPrimvars():
             new_primvars_api.RemovePrimvar(pvar.GetPrimvarName())
@@ -157,8 +165,74 @@ class MeshDecimator:
                     )
             elif interp == UsdGeom.Tokens.faceVarying:
                 print(
-                    f"  - Skipping face-varying primvar '{name}' (remapping not implemented)"
+                    f"  - Remapping face-varying primvar '{name}' using barycentric interpolation"
                 )
+                if (
+                    value is not None
+                    and orig_triangles is not None
+                    and new_triangles is not None
+                ):
+                    orig_points_np = np.asarray(orig_points)
+                    value_np = np.asarray(value)
+                    orig_triangles_np = np.asarray(orig_triangles)
+                    new_triangles_np = np.asarray(new_triangles)
+                    remapped = []
+                    for tri in new_triangles_np:
+                        # For each new triangle, get its 3 vertex positions
+                        new_verts = np.asarray([new_points[i] for i in tri])
+                        # Find the closest original triangle (by centroid)
+                        orig_tris_pts = orig_points_np[orig_triangles_np]
+                        centroids = orig_tris_pts.mean(axis=1)
+                        centroid = new_verts.mean(axis=0)
+                        dists = np.linalg.norm(centroids - centroid, axis=1)
+                        orig_tri_idx = np.argmin(dists)
+                        orig_tri = orig_triangles_np[orig_tri_idx]
+                        orig_tri_pts = orig_points_np[orig_tri]
+                        # For each vertex in the new triangle, compute barycentric coords in the original triangle
+                        for v in new_verts:
+
+                            def barycentric_coords(p, tri):
+                                v0, v1, v2 = tri[0], tri[1], tri[2]
+                                d00 = np.dot(v1 - v0, v1 - v0)
+                                d01 = np.dot(v1 - v0, v2 - v0)
+                                d11 = np.dot(v2 - v0, v2 - v0)
+                                d20 = np.dot(p - v0, v1 - v0)
+                                d21 = np.dot(p - v0, v2 - v0)
+                                denom = d00 * d11 - d01 * d01
+                                if denom == 0:
+                                    return np.array([1.0, 0.0, 0.0])
+                                v = (d11 * d20 - d01 * d21) / denom
+                                w = (d00 * d21 - d01 * d20) / denom
+                                u = 1.0 - v - w
+                                return np.array([u, v, w])
+
+                            bary = barycentric_coords(v, orig_tri_pts)
+                            orig_fv_start = orig_tri_idx * 3
+                            if orig_fv_start + 3 <= len(value_np):
+                                orig_fv = value_np[orig_fv_start : orig_fv_start + 3]
+                                if len(orig_fv) == 3:
+                                    interp = (
+                                        bary[0] * orig_fv[0]
+                                        + bary[1] * orig_fv[1]
+                                        + bary[2] * orig_fv[2]
+                                    )
+                                else:
+                                    interp = orig_fv[0] if len(orig_fv) > 0 else 0.0
+                            else:
+                                interp = value_np[0] if len(value_np) > 0 else 0.0
+                            remapped.append(
+                                interp.tolist() if hasattr(interp, "tolist") else interp
+                            )
+                    new_primvar = new_primvars_api.CreatePrimvar(
+                        name,
+                        primvar.GetTypeName(),
+                        interpolation=UsdGeom.Tokens.faceVarying,
+                    )
+                    new_primvar.Set(remapped)
+                else:
+                    print(
+                        f"    - Skipped remapping for '{name}' (missing value or triangle info)"
+                    )
             else:
                 print(f"  - Removing/skipping {interp} primvar '{name}' (not remapped)")
 
@@ -243,6 +317,8 @@ def process_usd_file(
             new_vertices,
             UsdGeom.PrimvarsAPI(usd_mesh),
             UsdGeom.PrimvarsAPI(new_usd_mesh),
+            orig_triangles=triangles,
+            new_triangles=new_triangles,
         )
 
     output_stage.GetRootLayer().Save()
